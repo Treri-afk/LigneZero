@@ -3,7 +3,7 @@ import { KeycapButton } from '@/components/ui/KeycapButton';
 import { FunnelStage } from '@/components/animation/FunnelStage';
 import { useCounter } from '@/hooks/useCounter';
 import { audience } from '@/data/sponsors';
-import { SponsorDossiers } from './SponsorDossiers';
+import { SponsorSpotlight } from './SponsorSpotlight';
 
 /* ── Devenir partenaire (audience + kit média) ──────────────── */
 function AudienceCell({ value, label, suffix }: { value: number; label: string; suffix?: string }) {
@@ -52,8 +52,8 @@ function BecomePartner() {
 export function SponsorShowcase() {
   return (
     <>
-      {/* dossiers d'enquête : un dossier par sponsor sur la table */}
-      <SponsorDossiers />
+      {/* spotlight : un sponsor à la fois sur scène, rotation auto */}
+      <SponsorSpotlight />
 
       <FunnelStage intensity={8} depth={60} perspective={1700} className="mt-14">
         <div data-tilt>

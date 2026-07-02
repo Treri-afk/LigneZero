@@ -351,6 +351,7 @@ export type Database = {
       }
       sponsors: {
         Row: {
+          color: string | null
           contribution: string | null
           created_at: string
           description: string | null
@@ -367,6 +368,7 @@ export type Database = {
           url: string
         }
         Insert: {
+          color?: string | null
           contribution?: string | null
           created_at?: string
           description?: string | null
@@ -383,6 +385,7 @@ export type Database = {
           url: string
         }
         Update: {
+          color?: string | null
           contribution?: string | null
           created_at?: string
           description?: string | null

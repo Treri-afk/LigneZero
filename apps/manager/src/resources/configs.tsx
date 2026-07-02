@@ -243,6 +243,7 @@ export const sponsorsConfig: ResourceConfig<Sponsor> = {
     { key: 'sector', label: 'Secteur' },
     { key: 'since', label: 'Depuis (année)', type: 'number' },
     { key: 'logo', label: 'Logo (chemin)' },
+    { key: 'color', label: 'Couleur marque (hex)', placeholder: '#38c8d6' },
     { key: 'tagline', label: 'Accroche' },
     { key: 'description', label: 'Description', type: 'textarea' },
     { key: 'contribution', label: 'Contribution', type: 'textarea' },
@@ -253,7 +254,7 @@ export const sponsorsConfig: ResourceConfig<Sponsor> = {
     { key: 'dActivation', label: 'Dossier · activation (un par ligne)', type: 'lines' },
   ],
   emptyDraft: {
-    id: '', name: '', tier: 'officiel', url: '', sector: '', since: '', logo: '', tagline: '',
+    id: '', name: '', tier: 'officiel', url: '', sector: '', since: '', logo: '', color: '', tagline: '',
     description: '', contribution: '', dClassification: '', dAgent: '', dIntel: '', dStory: '', dActivation: '',
   },
   toDraft: (s) => ({
@@ -264,6 +265,7 @@ export const sponsorsConfig: ResourceConfig<Sponsor> = {
     sector: s.sector ?? '',
     since: s.since?.toString() ?? '',
     logo: s.logo ?? '',
+    color: s.color ?? '',
     tagline: s.tagline ?? '',
     description: s.description ?? '',
     contribution: s.contribution ?? '',
@@ -292,6 +294,7 @@ export const sponsorsConfig: ResourceConfig<Sponsor> = {
       sector: str(d.sector),
       since: num(d.since),
       logo: str(d.logo),
+      color: str(d.color),
       tagline: str(d.tagline),
       description: str(d.description),
       contribution: str(d.contribution),

@@ -90,6 +90,8 @@ export interface Sponsor {
   name: string;
   /** Logo. Optionnel → placeholder texte. */
   logo?: string;
+  /** Couleur signature de la marque (hex) — teinte la scène spotlight. */
+  color?: string;
   url: string;
   tier: SponsorTier;
   /** Accroche du partenariat (surtout pour le partenaire principal). */

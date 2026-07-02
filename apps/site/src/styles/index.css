@@ -575,3 +575,49 @@
     50% { transform: translate(2px, -1px); clip-path: inset(20% 0 40% 0); }
   }
 }
+
+/* ── Sponsor spotlight (projecteur de scène) ─────────────────────────
+   Entrée du logo sous le cône + barre de temps de la rotation auto.
+   Ombres/cône DURS (clip-path net), pas de glow flou. */
+@keyframes spot-in {
+  0% { opacity: 0; transform: translateY(14px) scale(0.96); }
+  60% { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.spot-in {
+  animation: spot-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes spot-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.spot-progress {
+  transform-origin: left center;
+  animation: spot-progress var(--spot-dur, 5000ms) linear both;
+}
+/* Flicker d'allumage du cône au changement (2 clignotements nets). */
+@keyframes spot-flicker {
+  0% { opacity: 0; }
+  8% { opacity: 1; }
+  16% { opacity: 0.25; }
+  28% { opacity: 1; }
+  100% { opacity: 1; }
+}
+.spot-flicker {
+  animation: spot-flicker 0.5s steps(1, end) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .spot-in, .spot-progress, .spot-flicker { animation: none; }
+  .spot-progress { transform: scaleX(0); }
+}
+
+/* Réticule de verrouillage du spotlight : snap de l'extérieur vers la cible. */
+@keyframes ret-in {
+  0% { opacity: 0; transform: scale(1.3); }
+  55% { opacity: 1; transform: scale(0.97); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.ret-in { animation: ret-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .ret-in { animation: none; }
+}
