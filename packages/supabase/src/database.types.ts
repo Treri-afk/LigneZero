@@ -64,9 +64,39 @@ export type Database = {
         Relationships: []
       }
       sessions: {
-        Row: { id: string; kind: string; title: string; starts_at: string; duration_min: number | null; game_id: string | null; location: string | null; notes: string | null; created_by: string | null; created_at: string }
-        Insert: { id?: string; kind: string; title: string; starts_at: string; duration_min?: number | null; game_id?: string | null; location?: string | null; notes?: string | null; created_by?: string | null; created_at?: string }
-        Update: { id?: string; kind?: string; title?: string; starts_at?: string; duration_min?: number | null; game_id?: string | null; location?: string | null; notes?: string | null; created_by?: string | null; created_at?: string }
+        Row: { id: string; kind: string; title: string; starts_at: string; duration_min: number | null; game_id: string | null; location: string | null; notes: string | null; created_by: string | null; created_at: string; campaign_id: string | null }
+        Insert: { id?: string; kind: string; title: string; starts_at: string; duration_min?: number | null; game_id?: string | null; location?: string | null; notes?: string | null; created_by?: string | null; created_at?: string; campaign_id?: string | null }
+        Update: { id?: string; kind?: string; title?: string; starts_at?: string; duration_min?: number | null; game_id?: string | null; location?: string | null; notes?: string | null; created_by?: string | null; created_at?: string; campaign_id?: string | null }
+        Relationships: []
+      }
+      tryout_campaigns: {
+        Row: { id: string; title: string; game_id: string | null; role_sought: string | null; description: string | null; opens_at: string | null; closes_at: string | null; status: string; created_at: string }
+        Insert: { id: string; title: string; game_id?: string | null; role_sought?: string | null; description?: string | null; opens_at?: string | null; closes_at?: string | null; status?: string; created_at?: string }
+        Update: { id?: string; title?: string; game_id?: string | null; role_sought?: string | null; description?: string | null; opens_at?: string | null; closes_at?: string | null; status?: string; created_at?: string }
+        Relationships: []
+      }
+      candidates: {
+        Row: { id: string; campaign_id: string; pseudo: string; first_name: string | null; last_name: string | null; discord: string | null; email: string | null; role_applied: string | null; rank_current: string | null; notes: string | null; status: string; public_token: string; created_at: string; decided_at: string | null; decided_by: string | null; converted_player_id: string | null }
+        Insert: { id: string; campaign_id: string; pseudo: string; first_name?: string | null; last_name?: string | null; discord?: string | null; email?: string | null; role_applied?: string | null; rank_current?: string | null; notes?: string | null; status?: string; public_token?: string; created_at?: string; decided_at?: string | null; decided_by?: string | null; converted_player_id?: string | null }
+        Update: { id?: string; campaign_id?: string; pseudo?: string; first_name?: string | null; last_name?: string | null; discord?: string | null; email?: string | null; role_applied?: string | null; rank_current?: string | null; notes?: string | null; status?: string; public_token?: string; created_at?: string; decided_at?: string | null; decided_by?: string | null; converted_player_id?: string | null }
+        Relationships: []
+      }
+      candidate_evaluations: {
+        Row: { id: string; candidate_id: string; author_id: string; rating: number; recommendation: string; body: string; created_at: string }
+        Insert: { id: string; candidate_id: string; author_id: string; rating: number; recommendation: string; body?: string; created_at?: string }
+        Update: { id?: string; candidate_id?: string; author_id?: string; rating?: number; recommendation?: string; body?: string; created_at?: string }
+        Relationships: []
+      }
+      candidate_availability: {
+        Row: { id: string; candidate_id: string; day: string; start_time: string; end_time: string; created_at: string }
+        Insert: { id: string; candidate_id: string; day: string; start_time: string; end_time: string; created_at?: string }
+        Update: { id?: string; candidate_id?: string; day?: string; start_time?: string; end_time?: string; created_at?: string }
+        Relationships: []
+      }
+      session_candidates: {
+        Row: { session_id: string; candidate_id: string; status: string }
+        Insert: { session_id: string; candidate_id: string; status?: string }
+        Update: { session_id?: string; candidate_id?: string; status?: string }
         Relationships: []
       }
       clips: {
@@ -636,6 +666,7 @@ export type Database = {
           tags: string[]
           timestamp_sec: number | null
           title: string
+          board: Json
         }
         Insert: {
           created_at?: string
@@ -648,6 +679,7 @@ export type Database = {
           tags?: string[]
           timestamp_sec?: number | null
           title: string
+          board?: Json
         }
         Update: {
           created_at?: string
@@ -660,6 +692,7 @@ export type Database = {
           tags?: string[]
           timestamp_sec?: number | null
           title?: string
+          board?: Json
         }
         Relationships: [
           {
@@ -774,6 +807,24 @@ export type Database = {
         }
         Relationships: []
       }
+      valorant_maps: {
+        Row: { id: string; name: string; image: string | null; created_at: string }
+        Insert: { id: string; name: string; image?: string | null; created_at?: string }
+        Update: { id?: string; name?: string; image?: string | null; created_at?: string }
+        Relationships: []
+      }
+      valorant_agents: {
+        Row: { id: string; name: string; class: string; image: string | null; created_at: string }
+        Insert: { id: string; name: string; class?: string; image?: string | null; created_at?: string }
+        Update: { id?: string; name?: string; class?: string; image?: string | null; created_at?: string }
+        Relationships: []
+      }
+      valorant_abilities: {
+        Row: { id: string; agent_id: string; slot: string; name: string; category: string; shape: string; radius: number; width: number; length: number; image: string | null; created_at: string }
+        Insert: { id: string; agent_id: string; slot: string; name: string; category?: string; shape?: string; radius?: number; width?: number; length?: number; image?: string | null; created_at?: string }
+        Update: { id?: string; agent_id?: string; slot?: string; name?: string; category?: string; shape?: string; radius?: number; width?: number; length?: number; image?: string | null; created_at?: string }
+        Relationships: []
+      }
     }
     Views: { [_ in never]: never }
     Functions: {
@@ -784,6 +835,19 @@ export type Database = {
       is_content: { Args: Record<PropertyKey, never>; Returns: boolean }
       is_design: { Args: Record<PropertyKey, never>; Returns: boolean }
       my_player: { Args: Record<PropertyKey, never>; Returns: string }
+      is_evaluator: { Args: Record<PropertyKey, never>; Returns: boolean }
+      get_candidate_public: {
+        Args: { p_token: string }
+        Returns: { candidate_id: string; pseudo: string; campaign_title: string; role_sought: string | null; opens_at: string | null; closes_at: string | null; status: string }[]
+      }
+      get_candidate_availability: {
+        Args: { p_token: string }
+        Returns: { day: string; start_time: string; end_time: string }[]
+      }
+      set_candidate_availability: {
+        Args: { p_token: string; p_slots: Json }
+        Returns: undefined
+      }
     }
     Enums: { [_ in never]: never }
     CompositeTypes: { [_ in never]: never }

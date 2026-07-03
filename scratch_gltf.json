@@ -1,0 +1,237 @@
+{
+  "accessors": [
+    {
+      "bufferView": 1,
+      "byteOffset": 0,
+      "componentType": 5126,
+      "normalized": false,
+      "count": 415767,
+      "type": "VEC3",
+      "max": [
+        0.8799133896827698,
+        1,
+        0.4329284429550171
+      ],
+      "min": [
+        -0.8799133896827698,
+        -1,
+        -0.4329284429550171
+      ]
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 0,
+      "componentType": 5126,
+      "normalized": false,
+      "count": 415767,
+      "type": "VEC2",
+      "max": [
+        0.9999724626541138,
+        0.9999725222587585
+      ],
+      "min": [
+        0.000027473444788483903,
+        0.0004439353942871094
+      ]
+    },
+    {
+      "bufferView": 3,
+      "byteOffset": 0,
+      "componentType": 5126,
+      "normalized": false,
+      "count": 415767,
+      "type": "VEC3",
+      "max": [
+        0.9999998807907104,
+        0.999996542930603,
+        0.9999995231628418
+      ],
+      "min": [
+        -0.9999997615814209,
+        -0.9999979734420776,
+        -1
+      ]
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 0,
+      "componentType": 5125,
+      "normalized": false,
+      "count": 2012412,
+      "type": "SCALAR"
+    }
+  ],
+  "asset": {
+    "generator": "pygltflib@v1.16.5",
+    "version": "2.0"
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 8049648,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 8049648,
+      "byteLength": 4989204,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 13038852,
+      "byteLength": 3326136,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 16364988,
+      "byteLength": 4989204,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 21354192,
+      "byteLength": 1907076
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 23261268,
+      "byteLength": 767673
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 24028944,
+      "byteLength": 3342144
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 27371088
+    }
+  ],
+  "images": [
+    {
+      "mimeType": "image/jpeg",
+      "bufferView": 4
+    },
+    {
+      "mimeType": "image/jpeg",
+      "bufferView": 5
+    },
+    {
+      "mimeType": "image/jpeg",
+      "bufferView": 6
+    }
+  ],
+  "materials": [
+    {
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "metallicFactor": 1,
+        "roughnessFactor": 1,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 1,
+          "texCoord": 0
+        }
+      },
+      "normalTexture": {
+        "index": 2,
+        "texCoord": 0
+      },
+      "alphaMode": "OPAQUE",
+      "doubleSided": true
+    }
+  ],
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 2,
+            "TEXCOORD_0": 1
+          },
+          "indices": 3,
+          "mode": 4,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0,
+      "matrix": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+      ]
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    },
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    },
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    },
+    {
+      "sampler": 1,
+      "source": 1
+    },
+    {
+      "sampler": 2,
+      "source": 2
+    }
+  ]
+}

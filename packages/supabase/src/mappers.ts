@@ -46,10 +46,26 @@ import type {
   VideoAnnotation,
   MatchPlayerStat,
   Strat,
+  StratBoardObject,
+  ValorantMap,
+  ValorantAgent,
+  AgentClass,
+  ValorantAbility,
+  AbilityCategory,
+  AbilityShape,
   InventoryItemKind,
   InventoryItem,
   FavoriteMatch,
   MemberLinks,
+  TryoutCampaign,
+  TryoutCampaignStatus,
+  Candidate,
+  CandidateStatus,
+  CandidateEvaluation,
+  CandidateRecommendation,
+  CandidateAvailability,
+  SessionCandidate,
+  CandidateSessionStatus,
 } from '@lignezero/types';
 import type { Tables, TablesInsert } from './database.types';
 
@@ -369,6 +385,7 @@ export function fromSessionRow(r: Tables<'sessions'>): Session {
     gameId: u(r.game_id),
     location: u(r.location),
     notes: u(r.notes),
+    campaignId: u(r.campaign_id),
   };
 }
 export function toSessionRow(s: Partial<Session>): TablesInsert<'sessions'> {
@@ -381,6 +398,7 @@ export function toSessionRow(s: Partial<Session>): TablesInsert<'sessions'> {
     game_id: s.gameId ?? null,
     location: s.location ?? null,
     notes: s.notes ?? null,
+    campaign_id: s.campaignId ?? null,
   };
 }
 
@@ -493,6 +511,7 @@ export function fromStratRow(r: Tables<'strats'>): Strat {
     reviewId: u(r.review_id),
     timestampSec: u(r.timestamp_sec),
     createdAt: r.created_at,
+    board: (r.board as unknown as StratBoardObject[]) ?? [],
   };
 }
 export function toStratRow(s: Strat): TablesInsert<'strats'> {
@@ -505,6 +524,52 @@ export function toStratRow(s: Strat): TablesInsert<'strats'> {
     tags: s.tags ?? [],
     review_id: s.reviewId ?? null,
     timestamp_sec: s.timestampSec ?? null,
+    board: (s.board ?? []) as unknown as TablesInsert<'strats'>['board'],
+  };
+}
+
+// ── Valoplant (paramètres : maps, agents, compétences) ─────────────
+export function fromValorantMapRow(r: Tables<'valorant_maps'>): ValorantMap {
+  return { id: r.id, name: r.name, image: u(r.image), createdAt: r.created_at };
+}
+export function toValorantMapRow(m: Partial<ValorantMap>): TablesInsert<'valorant_maps'> {
+  return { id: m.id ?? '', name: m.name ?? '', image: m.image ?? null };
+}
+
+export function fromValorantAgentRow(r: Tables<'valorant_agents'>): ValorantAgent {
+  return { id: r.id, name: r.name, cls: r.class as AgentClass, image: u(r.image), createdAt: r.created_at };
+}
+export function toValorantAgentRow(a: Partial<ValorantAgent>): TablesInsert<'valorant_agents'> {
+  return { id: a.id ?? '', name: a.name ?? '', class: a.cls ?? 'duelist', image: a.image ?? null };
+}
+
+export function fromValorantAbilityRow(r: Tables<'valorant_abilities'>): ValorantAbility {
+  return {
+    id: r.id,
+    agentId: r.agent_id,
+    slot: r.slot as ValorantAbility['slot'],
+    name: r.name,
+    category: r.category as AbilityCategory,
+    shape: r.shape as AbilityShape,
+    radius: r.radius,
+    width: r.width,
+    length: r.length,
+    image: u(r.image),
+    createdAt: r.created_at,
+  };
+}
+export function toValorantAbilityRow(a: Partial<ValorantAbility>): TablesInsert<'valorant_abilities'> {
+  return {
+    id: a.id ?? '',
+    agent_id: a.agentId ?? '',
+    slot: a.slot ?? 'C',
+    name: a.name ?? '',
+    category: a.category ?? 'other',
+    shape: a.shape ?? 'circle',
+    radius: a.radius ?? 16,
+    width: a.width ?? 16,
+    length: a.length ?? 16,
+    image: a.image ?? null,
   };
 }
 
@@ -611,4 +676,119 @@ export function toTransactionRow(t: Partial<Transaction>): TablesInsert<'transac
     sponsor_id: t.sponsorId ?? null,
     notes: t.notes ?? null,
   };
+}
+
+// ── Recrutement / tryouts ──────────────────────────────────────────
+export function fromTryoutCampaignRow(r: Tables<'tryout_campaigns'>): TryoutCampaign {
+  return {
+    id: r.id,
+    title: r.title,
+    gameId: u(r.game_id),
+    roleSought: u(r.role_sought),
+    description: u(r.description),
+    opensAt: u(r.opens_at),
+    closesAt: u(r.closes_at),
+    status: r.status as TryoutCampaignStatus,
+    createdAt: r.created_at,
+  };
+}
+export function toTryoutCampaignRow(c: Partial<TryoutCampaign>): TablesInsert<'tryout_campaigns'> {
+  return {
+    id: c.id ?? '',
+    title: c.title ?? '',
+    game_id: c.gameId ?? null,
+    role_sought: c.roleSought ?? null,
+    description: c.description ?? null,
+    opens_at: c.opensAt ?? null,
+    closes_at: c.closesAt ?? null,
+    status: c.status ?? 'ouverte',
+  };
+}
+
+export function fromCandidateRow(r: Tables<'candidates'>): Candidate {
+  return {
+    id: r.id,
+    campaignId: r.campaign_id,
+    pseudo: r.pseudo,
+    firstName: u(r.first_name),
+    lastName: u(r.last_name),
+    discord: u(r.discord),
+    email: u(r.email),
+    roleApplied: u(r.role_applied),
+    rankCurrent: u(r.rank_current),
+    notes: u(r.notes),
+    status: r.status as CandidateStatus,
+    publicToken: r.public_token,
+    createdAt: r.created_at,
+    decidedAt: u(r.decided_at),
+    decidedBy: u(r.decided_by),
+    convertedPlayerId: u(r.converted_player_id),
+  };
+}
+/** N'écrit jamais public_token (généré côté DB, jamais réassignable depuis le client). */
+export function toCandidateRow(c: Partial<Candidate>): TablesInsert<'candidates'> {
+  return {
+    id: c.id ?? '',
+    campaign_id: c.campaignId ?? '',
+    pseudo: c.pseudo ?? '',
+    first_name: c.firstName ?? null,
+    last_name: c.lastName ?? null,
+    discord: c.discord ?? null,
+    email: c.email ?? null,
+    role_applied: c.roleApplied ?? null,
+    rank_current: c.rankCurrent ?? null,
+    notes: c.notes ?? null,
+    status: c.status ?? 'nouveau',
+    decided_at: c.decidedAt ?? null,
+    decided_by: c.decidedBy ?? null,
+  };
+}
+
+export function fromCandidateEvaluationRow(r: Tables<'candidate_evaluations'>): CandidateEvaluation {
+  return {
+    id: r.id,
+    candidateId: r.candidate_id,
+    authorId: r.author_id,
+    rating: r.rating,
+    recommendation: r.recommendation as CandidateRecommendation,
+    body: r.body,
+    createdAt: r.created_at,
+  };
+}
+export function toCandidateEvaluationRow(e: Partial<CandidateEvaluation>): TablesInsert<'candidate_evaluations'> {
+  return {
+    id: e.id ?? '',
+    candidate_id: e.candidateId ?? '',
+    author_id: e.authorId ?? '',
+    rating: e.rating ?? 3,
+    recommendation: e.recommendation ?? 'mitige',
+    body: e.body ?? '',
+  };
+}
+
+export function fromCandidateAvailabilityRow(r: Tables<'candidate_availability'>): CandidateAvailability {
+  return {
+    id: r.id,
+    candidateId: r.candidate_id,
+    day: r.day,
+    startTime: hhmm(r.start_time) ?? '',
+    endTime: hhmm(r.end_time) ?? '',
+  };
+}
+/** Correction manuelle par le staff (le flux normal passe par le lien public / RPC). */
+export function toCandidateAvailabilityRow(a: Partial<CandidateAvailability>): TablesInsert<'candidate_availability'> {
+  return {
+    id: a.id ?? '',
+    candidate_id: a.candidateId ?? '',
+    day: a.day ?? '',
+    start_time: a.startTime ?? '00:00',
+    end_time: a.endTime ?? '00:00',
+  };
+}
+
+export function fromSessionCandidateRow(r: Tables<'session_candidates'>): SessionCandidate {
+  return { sessionId: r.session_id, candidateId: r.candidate_id, status: r.status as CandidateSessionStatus };
+}
+export function toSessionCandidateRow(s: SessionCandidate): TablesInsert<'session_candidates'> {
+  return { session_id: s.sessionId, candidate_id: s.candidateId, status: s.status };
 }

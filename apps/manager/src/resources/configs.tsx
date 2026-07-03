@@ -13,7 +13,11 @@ import type {
   ProductStatus,
   Strat,
   VideoReview,
+  TryoutCampaign,
+  TryoutCampaignStatus,
+  ValorantMap,
 } from '@lignezero/types';
+import { Link } from 'react-router-dom';
 import { db } from '@/lib/supabase';
 import {
   Badge,
@@ -467,6 +471,84 @@ export const productsConfig: ResourceConfig<Product> = {
   remove: (id) => db.removeProduct(id),
 };
 
+// ── Campagnes de tryout / recrutement ───────────────────────────────────
+const CAMPAIGN_BADGE: Record<TryoutCampaignStatus, 'ok' | 'warn' | 'mute'> = {
+  ouverte: 'ok',
+  fermee: 'warn',
+  archivee: 'mute',
+};
+export const tryoutCampaignsConfig: ResourceConfig<TryoutCampaign> = {
+  code: 'TRY // Campagnes tryout',
+  title: 'Campagnes de recrutement',
+  rowKey: (c) => c.id,
+  rowTitle: (c) => c.title,
+  columns: [
+    { header: 'Titre', cell: (c) => <span className="text-[color:var(--text)]">{c.title}</span> },
+    { header: 'Poste', cell: (c) => c.roleSought ?? '—' },
+    {
+      header: 'Jeu',
+      cell: (c, ctx) => {
+        const games = (ctx.games as Game[]) ?? [];
+        return games.find((g) => g.id === c.gameId)?.name ?? '—';
+      },
+    },
+    { header: 'Fenêtre', cell: (c) => (c.opensAt || c.closesAt ? `${c.opensAt ?? '…'} → ${c.closesAt ?? '…'}` : '—') },
+    { header: 'État', cell: (c) => <Badge tone={CAMPAIGN_BADGE[c.status]}>{c.status}</Badge> },
+  ],
+  fields: (ctx) => [
+    { key: 'id', label: 'ID (slug unique)', idField: true, required: true, placeholder: 'ex. tryout-duelist-s5' },
+    { key: 'title', label: 'Titre', required: true, placeholder: 'Recrutement Duelist — saison 5' },
+    {
+      key: 'gameId',
+      label: 'Jeu',
+      type: 'select',
+      options: ((ctx.games as Game[]) ?? []).map((g) => ({ value: g.id, label: g.name })),
+    },
+    { key: 'roleSought', label: 'Poste recherché', placeholder: 'Duelist' },
+    { key: 'description', label: 'Description', type: 'textarea', full: true },
+    { key: 'opensAt', label: 'Ouverture', placeholder: 'YYYY-MM-DD' },
+    { key: 'closesAt', label: 'Fermeture', placeholder: 'YYYY-MM-DD' },
+    {
+      key: 'status',
+      label: 'État',
+      type: 'select',
+      required: true,
+      options: [
+        { value: 'ouverte', label: 'Ouverte' },
+        { value: 'fermee', label: 'Fermée' },
+        { value: 'archivee', label: 'Archivée' },
+      ],
+    },
+  ],
+  emptyDraft: { id: '', title: '', gameId: '', roleSought: '', description: '', opensAt: '', closesAt: '', status: 'ouverte' },
+  toDraft: (c) => ({
+    id: c.id,
+    title: c.title,
+    gameId: c.gameId ?? '',
+    roleSought: c.roleSought ?? '',
+    description: c.description ?? '',
+    opensAt: c.opensAt ?? '',
+    closesAt: c.closesAt ?? '',
+    status: c.status,
+  }),
+  fromDraft: (d) => ({
+    id: d.id.trim(),
+    title: d.title.trim(),
+    gameId: str(d.gameId),
+    roleSought: str(d.roleSought),
+    description: str(d.description),
+    opensAt: str(d.opensAt),
+    closesAt: str(d.closesAt),
+    status: (d.status || 'ouverte') as TryoutCampaignStatus,
+    // ignoré à l'écriture (toTryoutCampaignRow) — la DB pose created_at par défaut.
+    createdAt: new Date().toISOString(),
+  }),
+  load: () => db.listTryoutCampaigns(),
+  save: (c) => db.upsertTryoutCampaign(c),
+  remove: (id) => db.removeTryoutCampaign(id),
+  loadContext: async () => ({ games: await db.listGames() }),
+};
+
 // ── Strats (bibliothèque de tactiques/executes) ────────────────────────
 export const stratsConfig: ResourceConfig<Strat> = {
   code: 'STR // Strats',
@@ -484,6 +566,14 @@ export const stratsConfig: ResourceConfig<Strat> = {
     },
     { header: 'Map', cell: (s) => s.map ?? '—' },
     { header: 'Tags', cell: (s) => (s.tags.length > 0 ? s.tags.map((t) => <Badge key={t}>{t}</Badge>) : '—') },
+    {
+      header: 'Plan tactique',
+      cell: (s) => (
+        <Link to={`/strats/${s.id}/board`} className="font-mono text-[11px] uppercase tracking-hud text-accent hover:underline">
+          {s.board && s.board.length > 0 ? `Ouvrir (${s.board.length})` : 'Créer →'}
+        </Link>
+      ),
+    },
   ],
   fields: (ctx) => [
     { key: 'id', label: 'ID (slug unique)', idField: true, required: true, placeholder: 'strat-smoke-a-site' },
@@ -536,3 +626,32 @@ export const stratsConfig: ResourceConfig<Strat> = {
     return { games, reviews };
   },
 };
+
+// ── Valoplant — Paramètres : maps ───────────────────────────────────────
+export const valorantMapsConfig: ResourceConfig<ValorantMap> = {
+  code: 'MAP // Maps',
+  title: 'Maps',
+  rowKey: (m) => m.id,
+  rowTitle: (m) => m.name,
+  columns: [
+    {
+      header: 'Image',
+      cell: (m) => (m.image ? <img src={m.image} alt="" className="h-10 w-16 object-cover" /> : <span className="text-[color:var(--text-mute)]">—</span>),
+    },
+    { header: 'Nom', cell: (m) => <span className="text-[color:var(--text)]">{m.name}</span> },
+  ],
+  fields: () => [
+    { key: 'id', label: 'ID (slug unique)', idField: true, required: true, placeholder: 'ex. map-ascent' },
+    { key: 'name', label: 'Nom', required: true, placeholder: 'Ascent' },
+    { key: 'image', label: 'Image (ton propre screenshot/minimap)', type: 'image', folder: 'valorant-maps' },
+  ],
+  emptyDraft: { id: '', name: '', image: '' },
+  toDraft: (m) => ({ id: m.id, name: m.name, image: m.image ?? '' }),
+  fromDraft: (d) => ({ id: d.id.trim(), name: d.name.trim(), image: str(d.image), createdAt: new Date().toISOString() }),
+  load: () => db.listValorantMaps(),
+  save: (m) => db.upsertValorantMap(m),
+  remove: (id) => db.removeValorantMap(id),
+};
+
+// Agents + compétences : gérés par une page dédiée (imbriquée, pas le moteur
+// générique) — voir apps/manager/src/pages/AgentsSettingsPage.tsx.

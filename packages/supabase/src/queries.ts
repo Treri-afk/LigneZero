@@ -33,6 +33,15 @@ import type {
   DesignRequest,
   DesignStatus,
   Transaction,
+  TryoutCampaign,
+  Candidate,
+  CandidateStatus,
+  CandidateEvaluation,
+  CandidateAvailability,
+  SessionCandidate,
+  ValorantMap,
+  ValorantAgent,
+  ValorantAbility,
 } from '@lignezero/types';
 import type { LigneZeroClient } from './client';
 import {
@@ -84,6 +93,22 @@ import {
   toDesignRequestRow,
   fromTransactionRow,
   toTransactionRow,
+  fromTryoutCampaignRow,
+  toTryoutCampaignRow,
+  fromCandidateRow,
+  toCandidateRow,
+  fromCandidateEvaluationRow,
+  toCandidateEvaluationRow,
+  fromCandidateAvailabilityRow,
+  toCandidateAvailabilityRow,
+  fromSessionCandidateRow,
+  toSessionCandidateRow,
+  fromValorantMapRow,
+  toValorantMapRow,
+  fromValorantAgentRow,
+  toValorantAgentRow,
+  fromValorantAbilityRow,
+  toValorantAbilityRow,
 } from './mappers';
 
 function unwrap<T>(data: T | null, error: { message: string } | null): T {
@@ -493,6 +518,203 @@ export function createQueries(sb: LigneZeroClient) {
     },
     async removeTransaction(id: string): Promise<void> {
       const { error } = await sb.from('transactions').delete().eq('id', id);
+      unwrap(null, error);
+    },
+
+    // ── Tryouts / recrutement (staff) ──
+    async listTryoutCampaigns(): Promise<TryoutCampaign[]> {
+      const { data, error } = await sb.from('tryout_campaigns').select('*').order('created_at', { ascending: false });
+      return unwrap(data, error).map(fromTryoutCampaignRow);
+    },
+    async upsertTryoutCampaign(c: Partial<TryoutCampaign>): Promise<void> {
+      const { error } = await sb.from('tryout_campaigns').upsert(toTryoutCampaignRow(c));
+      unwrap(null, error);
+    },
+    async removeTryoutCampaign(id: string): Promise<void> {
+      const { error } = await sb.from('tryout_campaigns').delete().eq('id', id);
+      unwrap(null, error);
+    },
+
+    async listCandidates(campaignId?: string): Promise<Candidate[]> {
+      let q = sb.from('candidates').select('*').order('created_at', { ascending: false });
+      if (campaignId) q = q.eq('campaign_id', campaignId);
+      const { data, error } = await q;
+      return unwrap(data, error).map(fromCandidateRow);
+    },
+    async upsertCandidate(c: Partial<Candidate>): Promise<void> {
+      const { error } = await sb.from('candidates').upsert(toCandidateRow(c));
+      unwrap(null, error);
+    },
+    /**
+     * Change le statut d'un candidat. Si le nouveau statut est 'accepte' et
+     * que le candidat n'a pas déjà une fiche joueur liée, en crée une
+     * automatiquement (id `p-<candidateId>`, à partir de pseudo/nom/poste/jeu
+     * de campagne). Le compte auth/profil reste manuel (le candidat n'a pas
+     * de session tant qu'il ne s'inscrit pas lui-même) — seule la fiche
+     * roster est auto-créée, à lier plus tard depuis Comptes & rôles.
+     */
+    async setCandidateStatus(
+      candidate: Candidate,
+      status: CandidateStatus,
+      opts: { decidedBy?: string; gameId?: string } = {},
+    ): Promise<{ playerId?: string; warning?: string }> {
+      const isFinal = status === 'accepte' || status === 'refuse';
+      const { error } = await sb
+        .from('candidates')
+        .update({ status, decided_at: isFinal ? new Date().toISOString() : null, decided_by: isFinal ? (opts.decidedBy ?? null) : null })
+        .eq('id', candidate.id);
+      unwrap(null, error);
+
+      if (status !== 'accepte' || candidate.convertedPlayerId) return {};
+
+      if (!opts.gameId) {
+        return { warning: "Candidat accepté, mais aucune fiche joueur créée automatiquement : la campagne n'a pas de jeu associé. Ajoute-en un à la campagne, ou crée la fiche joueur à la main." };
+      }
+
+      const playerId = `p-${candidate.id}`;
+      const player: Player = {
+        id: playerId,
+        pseudo: candidate.pseudo,
+        firstName: candidate.firstName,
+        lastName: candidate.lastName,
+        role: candidate.roleApplied ?? '',
+        gameId: opts.gameId,
+        socials: [],
+        stats: [],
+        palmares: [],
+        setup: [],
+      };
+      const { error: playerError } = await sb.from('players').upsert(toPlayerRow(player));
+      unwrap(null, playerError);
+      const { error: linkError } = await sb.from('candidates').update({ converted_player_id: playerId }).eq('id', candidate.id);
+      unwrap(null, linkError);
+      return { playerId };
+    },
+    async removeCandidate(id: string): Promise<void> {
+      const { error } = await sb.from('candidates').delete().eq('id', id);
+      unwrap(null, error);
+    },
+
+    async listCandidateEvaluations(candidateId?: string): Promise<CandidateEvaluation[]> {
+      let q = sb.from('candidate_evaluations').select('*').order('created_at', { ascending: false });
+      if (candidateId) q = q.eq('candidate_id', candidateId);
+      const { data, error } = await q;
+      return unwrap(data, error).map(fromCandidateEvaluationRow);
+    },
+    /** Un avis par (candidat, auteur) — upsert sur ce couple pour permettre la correction. */
+    async upsertCandidateEvaluation(e: Partial<CandidateEvaluation>): Promise<void> {
+      const { error } = await sb.from('candidate_evaluations').upsert(toCandidateEvaluationRow(e), { onConflict: 'candidate_id,author_id' });
+      unwrap(null, error);
+    },
+    async removeCandidateEvaluation(id: string): Promise<void> {
+      const { error } = await sb.from('candidate_evaluations').delete().eq('id', id);
+      unwrap(null, error);
+    },
+
+    /**
+     * Dispos candidats — lecture staff (le flux normal d'écriture passe par les
+     * RPC publiques ci-dessous). Filtre par `candidateIds` (pas de jointure
+     * serveur sur campaign_id : le caller croise avec `listCandidates` côté client,
+     * comme partout ailleurs dans ce fichier).
+     */
+    async listCandidateAvailability(candidateIds?: string[]): Promise<CandidateAvailability[]> {
+      let q = sb.from('candidate_availability').select('*').order('day');
+      if (candidateIds) q = q.in('candidate_id', candidateIds);
+      const { data, error } = await q;
+      return unwrap(data, error).map(fromCandidateAvailabilityRow);
+    },
+    /** Correction manuelle par le staff d'un créneau candidat. */
+    async upsertCandidateAvailability(a: Partial<CandidateAvailability>): Promise<void> {
+      const { error } = await sb.from('candidate_availability').upsert(toCandidateAvailabilityRow(a));
+      unwrap(null, error);
+    },
+    async removeCandidateAvailability(id: string): Promise<void> {
+      const { error } = await sb.from('candidate_availability').delete().eq('id', id);
+      unwrap(null, error);
+    },
+
+    async listSessionCandidates(sessionId?: string): Promise<SessionCandidate[]> {
+      let q = sb.from('session_candidates').select('*');
+      if (sessionId) q = q.eq('session_id', sessionId);
+      const { data, error } = await q;
+      return unwrap(data, error).map(fromSessionCandidateRow);
+    },
+    async setSessionCandidate(s: SessionCandidate): Promise<void> {
+      const { error } = await sb.from('session_candidates').upsert(toSessionCandidateRow(s));
+      unwrap(null, error);
+    },
+    async removeSessionCandidate(sessionId: string, candidateId: string): Promise<void> {
+      const { error } = await sb.from('session_candidates').delete().eq('session_id', sessionId).eq('candidate_id', candidateId);
+      unwrap(null, error);
+    },
+
+    // ── Tryouts / recrutement — RPC publiques (lien /tryout/:token, sans auth) ──
+    async getCandidateByToken(token: string) {
+      const { data, error } = await sb.rpc('get_candidate_public', { p_token: token });
+      unwrap(data, error);
+      const row = data?.[0];
+      if (!row) return null;
+      return {
+        candidateId: row.candidate_id,
+        pseudo: row.pseudo,
+        campaignTitle: row.campaign_title,
+        roleSought: row.role_sought ?? undefined,
+        opensAt: row.opens_at ?? undefined,
+        closesAt: row.closes_at ?? undefined,
+        status: row.status as CandidateStatus,
+      };
+    },
+    async getCandidateAvailabilityByToken(token: string): Promise<Pick<CandidateAvailability, 'day' | 'startTime' | 'endTime'>[]> {
+      const { data, error } = await sb.rpc('get_candidate_availability', { p_token: token });
+      const rows = unwrap(data, error);
+      return rows.map((r) => ({ day: r.day, startTime: r.start_time.slice(0, 5), endTime: r.end_time.slice(0, 5) }));
+    },
+    /** Remplace entièrement les créneaux du candidat identifié par son jeton public. */
+    async setCandidateAvailabilityByToken(
+      token: string,
+      slots: { day: string; startTime: string; endTime: string }[],
+    ): Promise<void> {
+      const { error } = await sb.rpc('set_candidate_availability', { p_token: token, p_slots: slots });
+      unwrap(null, error);
+    },
+
+    // ── Valoplant (paramètres : maps, agents, compétences) ──
+    async listValorantMaps(): Promise<ValorantMap[]> {
+      const { data, error } = await sb.from('valorant_maps').select('*').order('name');
+      return unwrap(data, error).map(fromValorantMapRow);
+    },
+    async upsertValorantMap(m: Partial<ValorantMap>): Promise<void> {
+      const { error } = await sb.from('valorant_maps').upsert(toValorantMapRow(m));
+      unwrap(null, error);
+    },
+    async removeValorantMap(id: string): Promise<void> {
+      const { error } = await sb.from('valorant_maps').delete().eq('id', id);
+      unwrap(null, error);
+    },
+
+    async listValorantAgents(): Promise<ValorantAgent[]> {
+      const { data, error } = await sb.from('valorant_agents').select('*').order('name');
+      return unwrap(data, error).map(fromValorantAgentRow);
+    },
+    async upsertValorantAgent(a: Partial<ValorantAgent>): Promise<void> {
+      const { error } = await sb.from('valorant_agents').upsert(toValorantAgentRow(a));
+      unwrap(null, error);
+    },
+    async removeValorantAgent(id: string): Promise<void> {
+      const { error } = await sb.from('valorant_agents').delete().eq('id', id);
+      unwrap(null, error);
+    },
+
+    async listValorantAbilities(): Promise<ValorantAbility[]> {
+      const { data, error } = await sb.from('valorant_abilities').select('*').order('agent_id').order('slot');
+      return unwrap(data, error).map(fromValorantAbilityRow);
+    },
+    async upsertValorantAbility(a: Partial<ValorantAbility>): Promise<void> {
+      const { error } = await sb.from('valorant_abilities').upsert(toValorantAbilityRow(a));
+      unwrap(null, error);
+    },
+    async removeValorantAbility(id: string): Promise<void> {
+      const { error } = await sb.from('valorant_abilities').delete().eq('id', id);
       unwrap(null, error);
     },
   };

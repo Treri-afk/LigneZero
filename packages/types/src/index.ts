@@ -245,7 +245,7 @@ export interface Feedback {
   createdAt: string;
 }
 
-export type SessionKind = 'scrim' | 'practice' | 'review' | 'tournament' | 'meeting' | 'event';
+export type SessionKind = 'scrim' | 'practice' | 'review' | 'tournament' | 'meeting' | 'event' | 'tryout';
 
 export interface Session {
   id: string;
@@ -257,6 +257,8 @@ export interface Session {
   gameId?: string;
   location?: string;
   notes?: string;
+  /** Campagne de tryout liée — requis seulement si kind='tryout'. */
+  campaignId?: string;
 }
 
 export type RsvpStatus = 'yes' | 'no' | 'maybe';
@@ -345,17 +347,123 @@ export interface MemberLinks {
   twitchHandle?: string;
 }
 
+export type StratToolKind = 'arrow' | 'line' | 'circle' | 'rect' | 'text' | 'agent' | 'icon';
+
+/**
+ * Un objet posé sur le plan tactique d'une strat (flèche, forme, agent en
+ * position, icône de compétence…). `points` porte les coordonnées selon
+ * `kind` : arrow/line → paire(s) [x1,y1,x2,y2,...] ; sinon un seul point
+ * [x,y] d'ancrage. Forme/taille des `icon` toujours résolues en live depuis
+ * ValorantAbility (pas figées à la pose) pour rester à jour après un patch note.
+ */
+/** Position d'un objet à un instant donné de la timeline (secondes). `points`
+ * a la même forme que StratBoardObject.points (paires pour arrow/line, [x,y]
+ * sinon). Trié par `t` croissant. */
+export interface StratKeyframe {
+  t: number;
+  points: number[];
+}
+
+export interface StratBoardObject {
+  id: string;
+  kind: StratToolKind;
+  points: number[];
+  color: string;
+  /** circle : rayon. */
+  radius?: number;
+  /** rect : dimensions. */
+  width?: number;
+  height?: number;
+  rotation?: number;
+  /** text : contenu. */
+  label?: string;
+  /** agent uniquement : camp (teinte le marqueur). */
+  side?: 'attack' | 'defense';
+  /** agent/icon : référence dans le registre agents/compétences (Paramètres → Valoplant). */
+  agentId?: string;
+  /** icon uniquement (absent pour kind='agent'). */
+  abilityId?: string;
+  /** Trajectoire animée : ≥2 keyframes = l'objet se déplace quand on joue le plan. */
+  keyframes?: StratKeyframe[];
+}
+
 /** Entrée de bibliothèque de strats/executes, taguée par jeu/map. */
 export interface Strat {
   id: string;
   title: string;
   gameId?: string;
+  /** Nom de la map — résout l'image de fond via ValorantMap.name (Paramètres → Valoplant). */
   map?: string;
   description: string;
   tags: string[];
   /** Renvoie vers un instant précis d'une revue vidéo (démonstration). */
   reviewId?: string;
   timestampSec?: number;
+  createdAt: string;
+  /** Objets dessinés sur le plan tactique. */
+  board?: StratBoardObject[];
+}
+
+// ── Valoplant (paramètres du plan tactique : maps, agents, compétences) ──
+
+/** Une map jouable, avec son image de fond réutilisable par toutes les strats qui la référencent. */
+export interface ValorantMap {
+  id: string;
+  name: string;
+  /** Upload staff (jamais un asset officiel embarqué dans le code). */
+  image?: string;
+  createdAt: string;
+}
+
+export type AgentClass = 'duelist' | 'initiator' | 'controller' | 'sentinel';
+
+export interface ValorantAgent {
+  id: string;
+  name: string;
+  cls: AgentClass;
+  /** Portrait/icône uploadé (staff) — jamais un asset officiel embarqué. */
+  image?: string;
+  createdAt: string;
+}
+
+export type AbilityCategory =
+  | 'smoke'
+  | 'flash'
+  | 'molotov'
+  | 'wall'
+  | 'trap'
+  | 'heal'
+  | 'recon'
+  | 'dash'
+  | 'stun'
+  | 'shield'
+  | 'decoy'
+  | 'ultimate'
+  | 'other';
+
+/**
+ * Forme dessinée sur le plan tactique. Les champs `radius`/`width`/`length`
+ * sont réinterprétés selon la forme (pour rester recalibrables à chaque
+ * patch note sans faire exploser le schéma en colonnes spécifiques) :
+ * - circle : `radius` (px), width/length ignorés.
+ * - rect   : `width` × `length` (px), rectangle centré sur le point posé.
+ * - line   : `length` = longueur du trait (px), `width` = épaisseur (px).
+ * - cone   : `length` = portée/rayon (px), `width` = angle d'ouverture (degrés).
+ */
+export type AbilityShape = 'circle' | 'rect' | 'line' | 'cone';
+
+export interface ValorantAbility {
+  id: string;
+  agentId: string;
+  slot: 'C' | 'Q' | 'E' | 'X';
+  name: string;
+  category: AbilityCategory;
+  shape: AbilityShape;
+  radius: number;
+  width: number;
+  length: number;
+  /** Icône uploadée (staff) — si présente, remplace le glyphe générique par catégorie. */
+  image?: string;
   createdAt: string;
 }
 
@@ -376,6 +484,87 @@ export interface DesignRequest {
   /** Lien vers le livrable (Drive, Figma, export…). */
   assetUrl?: string;
   createdAt: string;
+}
+
+// ── Recrutement / tryouts ─────────────────────────────────────────────
+
+export type TryoutCampaignStatus = 'ouverte' | 'fermee' | 'archivee';
+
+export interface TryoutCampaign {
+  id: string;
+  title: string;
+  gameId?: string;
+  /** Poste recherché (libre, ex. "Duelist", "IGL"). */
+  roleSought?: string;
+  description?: string;
+  /** Fenêtre de la campagne (dates ISO jour). */
+  opensAt?: string;
+  closesAt?: string;
+  status: TryoutCampaignStatus;
+  createdAt: string;
+}
+
+export type CandidateStatus = 'nouveau' | 'en_evaluation' | 'liste_attente' | 'accepte' | 'refuse';
+
+export interface Candidate {
+  id: string;
+  campaignId: string;
+  pseudo: string;
+  firstName?: string;
+  lastName?: string;
+  discord?: string;
+  email?: string;
+  roleApplied?: string;
+  rankCurrent?: string;
+  /** Note interne libre (staff uniquement, distincte des évaluations notées). */
+  notes?: string;
+  status: CandidateStatus;
+  /** Jeton opaque du lien public `/tryout/:token` — jamais généré côté client. */
+  publicToken: string;
+  createdAt: string;
+  decidedAt?: string;
+  decidedBy?: string;
+  /** Fiche joueur créée automatiquement quand le candidat passe 'accepte' (players.id). */
+  convertedPlayerId?: string;
+}
+
+export type CandidateRecommendation = 'oui' | 'non' | 'mitige';
+
+/** Avis noté d'un joueur/coach/staff sur un candidat en tryout. Un seul par (candidat, auteur). */
+export interface CandidateEvaluation {
+  id: string;
+  candidateId: string;
+  /** Auteur (profiles.id). */
+  authorId: string;
+  /** Note 1 à 5. */
+  rating: number;
+  recommendation: CandidateRecommendation;
+  body: string;
+  createdAt: string;
+}
+
+/**
+ * Créneau de dispo d'un candidat — même forme que Availability mais pool séparé
+ * (saisi via le lien public par jeton, jamais par un compte staff).
+ */
+export interface CandidateAvailability {
+  id: string;
+  candidateId: string;
+  /** Jour (date ISO). */
+  day: string;
+  /** Heure de début 'HH:MM'. */
+  startTime: string;
+  /** Heure de fin 'HH:MM'. */
+  endTime: string;
+}
+
+export type CandidateSessionStatus = 'invite' | 'confirme' | 'absent';
+
+/** Lien entre une pracc de tryout (Session) et les candidats invités. */
+export interface SessionCandidate {
+  sessionId: string;
+  candidateId: string;
+  status: CandidateSessionStatus;
 }
 
 // ── Finance (accès CEO/admin uniquement — RLS stricte) ──

@@ -13,6 +13,8 @@ interface AuthState {
   isAdmin: boolean;
   isManager: boolean;
   isPerf: boolean;
+  /** Peut noter/évaluer un candidat en tryout : admin/manager/coach/joueur/staff. */
+  isEvaluator: boolean;
   isContent: boolean;
   /** Équipe design : peut traiter les demandes graphiques. */
   isDesign: boolean;
@@ -74,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin: role === 'admin',
     isManager: role === 'admin' || role === 'manager',
     isPerf: role === 'admin' || role === 'manager' || role === 'coach',
+    isEvaluator: role === 'admin' || role === 'manager' || role === 'coach' || role === 'joueur' || role === 'staff',
     isContent: role === 'admin' || role === 'manager' || role === 'content',
     isDesign: role === 'admin' || role === 'manager' || role === 'content' || role === 'graphiste',
     isActive: !!role && role !== 'member',

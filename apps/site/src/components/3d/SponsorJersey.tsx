@@ -1,12 +1,14 @@
 import { useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, ContactShadows, Text, useCursor } from '@react-three/drei';
+import { OrbitControls, ContactShadows, Text, useCursor, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { PostFX } from './PostFX';
 import { tokens } from '@/theme/tokens';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import type { PlacedSponsor, JerseyAnchor } from '@/lib/jerseyAnchors';
+
+const JERSEY_MODEL_URL = '/models/jersey.glb';
 
 interface SponsorJerseyProps {
   placed: PlacedSponsor[];
@@ -19,48 +21,24 @@ interface SponsorJerseyProps {
 const FORWARD = new THREE.Vector3(0, 0, 1);
 const HOME = { pos: new THREE.Vector3(0, 0.35, 5), target: new THREE.Vector3(0, 0, 0), isHome: true, key: 'home' };
 
-/* ── Maillot procédural (front +z / dos -z), même silhouette que le shop ── */
-function Jersey({ base, accent }: { base: string; accent: string }) {
-  const geometry = useMemo(() => {
-    const s = new THREE.Shape();
-    s.moveTo(-0.42, 1.0);
-    s.lineTo(-0.95, 1.02);
-    s.lineTo(-1.55, 0.58);
-    s.lineTo(-1.22, 0.3);
-    s.lineTo(-0.72, 0.52);
-    s.lineTo(-0.82, -1.2);
-    s.lineTo(0.82, -1.2);
-    s.lineTo(0.72, 0.52);
-    s.lineTo(1.22, 0.3);
-    s.lineTo(1.55, 0.58);
-    s.lineTo(0.95, 1.02);
-    s.lineTo(0.42, 1.0);
-    s.quadraticCurveTo(0, 0.78, -0.42, 1.0);
-    const geo = new THREE.ExtrudeGeometry(s, {
-      depth: 0.34,
-      bevelEnabled: true,
-      bevelThickness: 0.06,
-      bevelSize: 0.06,
-      bevelSegments: 3,
-      curveSegments: 24,
+/* ── Maillot réel (modèle .glb, textures PBR embarquées), front +z / dos -z ── */
+function Jersey() {
+  const { scene } = useGLTF(JERSEY_MODEL_URL);
+  const model = useMemo(() => {
+    const clone = scene.clone(true);
+    clone.traverse((obj) => {
+      if (obj instanceof THREE.Mesh) {
+        obj.castShadow = true;
+        obj.receiveShadow = true;
+      }
     });
-    geo.center();
-    return geo;
-  }, []);
+    return clone;
+  }, [scene]);
 
-  return (
-    <group rotation={[0, 0, 0]}>
-      <mesh geometry={geometry} castShadow receiveShadow>
-        <meshStandardMaterial color={base} roughness={0.7} metalness={0.1} />
-      </mesh>
-      {/* liseré de col (avant) */}
-      <mesh position={[0, 0.86, 0.18]}>
-        <torusGeometry args={[0.34, 0.05, 8, 24, Math.PI]} />
-        <meshStandardMaterial color={accent} roughness={0.5} />
-      </mesh>
-    </group>
-  );
+  return <primitive object={model} />;
 }
+
+useGLTF.preload(JERSEY_MODEL_URL);
 
 /* ── Patch sponsor cliquable, plaqué sur la surface, orienté vers la normale ── */
 function SponsorPatch({
@@ -182,7 +160,6 @@ export default function SponsorJersey({
   placed,
   selectedId,
   onSelect,
-  base = '#242019',
   accent = tokens.color.accent,
 }: SponsorJerseyProps) {
   const reduced = useReducedMotion();
@@ -215,7 +192,7 @@ export default function SponsorJersey({
       <pointLight position={[-4, 1, -3]} intensity={3} color={accent} />
       <pointLight position={[3, -2, -2]} intensity={1.1} color="#5566ff" />
 
-      <Jersey base={base} accent={accent} />
+      <Jersey />
 
       {placed.map((p) => (
         <SponsorPatch

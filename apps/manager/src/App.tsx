@@ -22,6 +22,11 @@ import { MatchHubPage } from '@/pages/MatchHubPage';
 import { SponsorTrackingPage } from '@/pages/SponsorTrackingPage';
 import { DesignRequestsPage } from '@/pages/DesignRequestsPage';
 import { FinancePage } from '@/pages/FinancePage';
+import { CandidatesPage } from '@/pages/CandidatesPage';
+import { TryoutAvailabilityPage } from '@/pages/TryoutAvailabilityPage';
+import { PublicTryoutFormPage } from '@/pages/PublicTryoutFormPage';
+import { StratBoardPage } from '@/pages/StratBoardPage';
+import { AgentsSettingsPage } from '@/pages/AgentsSettingsPage';
 import {
   gamesConfig,
   staffConfig,
@@ -30,6 +35,8 @@ import {
   clipsConfig,
   productsConfig,
   stratsConfig,
+  tryoutCampaignsConfig,
+  valorantMapsConfig,
 } from '@/resources/configs';
 
 /** Écran "compte en attente de validation" (rôle member). */
@@ -50,7 +57,7 @@ function Pending() {
 }
 
 function Gate() {
-  const { loading, session, isActive, isAdmin, isManager, isContent, isPerf, role } = useAuth();
+  const { loading, session, isActive, isAdmin, isManager, isContent, isPerf, isEvaluator, role } = useAuth();
 
   if (loading) {
     return (
@@ -78,6 +85,10 @@ function Gate() {
         <Route path="/dispos" element={<TeamAvailabilityPage />} />
         <Route path="/review" element={<VideoReviewPage />} />
         <Route path="/strats" element={<ResourcePage config={stratsConfig} canWrite={isPerf} />} />
+        <Route path="/strats/:stratId/board" element={<StratBoardPage />} />
+        <Route path="/tryouts" element={isEvaluator ? <CandidatesPage /> : <Navigate to="/" replace />} />
+        <Route path="/tryouts/creneaux" element={isEvaluator ? <TryoutAvailabilityPage /> : <Navigate to="/" replace />} />
+        <Route path="/tryouts/campagnes" element={isPerf ? <ResourcePage config={tryoutCampaignsConfig} canWrite={isPerf} /> : <Navigate to="/" replace />} />
 
         {/* Direction */}
         <Route path="/players" element={<PlayersPage />} />
@@ -96,6 +107,10 @@ function Gate() {
         <Route path="/clips" element={<ResourcePage config={clipsConfig} canWrite={isContent} />} />
         <Route path="/products" element={<ResourcePage config={productsConfig} canWrite={isContent} />} />
 
+        {/* Paramètres */}
+        <Route path="/parametres/maps" element={<ResourcePage config={valorantMapsConfig} canWrite={isManager} />} />
+        <Route path="/parametres/agents" element={<AgentsSettingsPage />} />
+
         {/* Admin */}
         <Route path="/finance" element={isAdmin ? <FinancePage /> : <Navigate to="/" replace />} />
         <Route path="/comptes" element={isAdmin ? <AccountsPage /> : <Navigate to="/" replace />} />
@@ -106,12 +121,23 @@ function Gate() {
   );
 }
 
+/** Espace authentifié (staff/joueurs) — tout ce qui vit derrière la connexion Supabase. */
+function AuthedApp() {
+  return (
+    <AuthProvider>
+      <Gate />
+    </AuthProvider>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Gate />
-      </AuthProvider>
+      <Routes>
+        {/* Formulaire public de dispo tryout : aucune auth, jamais sous AuthProvider/Gate. */}
+        <Route path="/tryout/:token" element={<PublicTryoutFormPage />} />
+        <Route path="/*" element={<AuthedApp />} />
+      </Routes>
     </BrowserRouter>
   );
 }

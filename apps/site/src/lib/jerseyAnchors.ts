@@ -24,15 +24,24 @@ export interface JerseyAnchor {
   camDist: number;
 }
 
-/** Ancres du plus prestigieux (torse) au moins exposé (bas du dos). */
+/**
+ * Calibrées sur public/models/jersey.glb à partir d'une coupe réelle du
+ * maillage par bandes de hauteur (min/max x/z par tranche de y, cf. script
+ * d'analyse). Ce modèle est un maillot "à plat" (torse ±0.5 en x jusqu'à
+ * y≈0, ailes de manches déployées jusqu'à x≈±0.88 entre y≈0.1 et y≈0.9,
+ * profondeur z quasi constante ±0.38→0.43 — donc surface globalement
+ * plane, normales proches de ±z partout, pas de galbe manche prononcé).
+ * À réajuster à l'œil si un patch flotte ou clippe (modifier ces valeurs
+ * puis recharger /sponsors, HMR suffit).
+ */
 export const JERSEY_ANCHORS: JerseyAnchor[] = [
-  { id: 'chest',      label: 'Torse — central',   position: [0, 0.12, 0.19],    normal: [0, 0, 1],  size: [1.15, 0.5], camDist: 1.9 },
-  { id: 'sleeve-l',   label: 'Manche gauche',     position: [-1.16, 0.42, 0.19], normal: [-0.55, 0.05, 0.83], size: [0.42, 0.28], camDist: 1.4 },
-  { id: 'sleeve-r',   label: 'Manche droite',     position: [1.16, 0.42, 0.19],  normal: [0.55, 0.05, 0.83],  size: [0.42, 0.28], camDist: 1.4 },
-  { id: 'chest-r',    label: 'Poitrine droite',   position: [0.5, 0.5, 0.19],    normal: [0.18, 0.1, 0.98],   size: [0.38, 0.24], camDist: 1.3 },
-  { id: 'back-top',   label: 'Dos — haut',        position: [0, 0.42, -0.19],    normal: [0, 0.05, -1],       size: [0.9, 0.32], camDist: 1.7 },
-  { id: 'back-low',   label: 'Dos — bas',         position: [0, -0.5, -0.19],    normal: [0, -0.05, -1],      size: [0.8, 0.3], camDist: 1.6 },
-  { id: 'chest-l',    label: 'Poitrine gauche',   position: [-0.5, 0.5, 0.19],   normal: [-0.18, 0.1, 0.98],  size: [0.38, 0.24], camDist: 1.3 },
+  { id: 'chest',      label: 'Torse — central',   position: [0, -0.05, 0.46],    normal: [0, 0, 1],   size: [0.4, 0.26], camDist: 1.5 },
+  { id: 'sleeve-l',   label: 'Manche gauche',     position: [-0.7, 0.45, 0.32],  normal: [0, 0, 1],   size: [0.22, 0.2], camDist: 1.2 },
+  { id: 'sleeve-r',   label: 'Manche droite',     position: [0.7, 0.45, 0.32],   normal: [0, 0, 1],   size: [0.22, 0.2], camDist: 1.2 },
+  { id: 'chest-r',    label: 'Poitrine droite',   position: [0.24, 0.23, 0.44],  normal: [0, 0, 1],   size: [0.18, 0.16], camDist: 1.1 },
+  { id: 'back-top',   label: 'Dos — haut',        position: [0, 0.1, -0.44],     normal: [0, 0, -1],  size: [0.42, 0.28], camDist: 1.5 },
+  { id: 'back-low',   label: 'Dos — bas',         position: [0, -0.5, -0.44],    normal: [0, 0, -1],  size: [0.38, 0.26], camDist: 1.4 },
+  { id: 'chest-l',    label: 'Poitrine gauche',   position: [-0.24, 0.23, 0.44], normal: [0, 0, 1],   size: [0.18, 0.16], camDist: 1.1 },
 ];
 
 export interface PlacedSponsor {

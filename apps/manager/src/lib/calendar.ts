@@ -20,11 +20,12 @@ export const KIND_META: Record<EventType, KindMeta> = {
   review: { label: 'Review / VOD', color: '#a06cf0' },
   meeting: { label: 'Réunion', color: '#8c8375' },
   event: { label: 'Événement', color: '#2dd4ff' },
+  tryout: { label: 'Pracc tryout', color: '#f23127' },
 };
 
 /** Types de session éditables (tout sauf 'match', qui a sa propre entité). */
 export const SESSION_KINDS: { id: SessionKind; label: string }[] = (
-  ['practice', 'scrim', 'review', 'tournament', 'meeting', 'event'] as SessionKind[]
+  ['practice', 'scrim', 'review', 'tournament', 'meeting', 'event', 'tryout'] as SessionKind[]
 ).map((id) => ({ id, label: KIND_META[id].label }));
 
 /** Événement normalisé pour la grille calendrier. */
