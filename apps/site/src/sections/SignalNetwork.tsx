@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useBrand } from '@/data/DataProvider';
 import type { Sponsor } from '@/types';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { LiquidFill } from '@/components/ui/LiquidFill';
@@ -24,6 +25,7 @@ function layout(nodes: Sponsor[]) {
  * le cœur). Hover = câble qui se tend + s'allume. Clic = fiche.
  */
 export function SignalNetwork({ nodes, onOpen }: { nodes: Sponsor[]; onOpen: (s: Sponsor) => void }) {
+  const brand = useBrand();
   const reduced = useReducedMotion();
   const [hover, setHover] = useState<string | null>(null);
   const hoverRef = useRef<string | null>(null);
@@ -156,7 +158,7 @@ export function SignalNetwork({ nodes, onOpen }: { nodes: Sponsor[]; onOpen: (s:
       >
         <LiquidFill height={36} />
         <div className="relative z-10">
-          <span className="hud-title text-lg font-bold glow-text sm:text-2xl">__BRAND__</span>
+          <span className="hud-title text-lg font-bold glow-text sm:text-2xl">{brand.name}</span>
           <span className="mt-1 flex items-center justify-center gap-1.5 font-mono text-[8px] uppercase tracking-hud text-[color:var(--text-mute)]">
             <span className="h-1.5 w-1.5 animate-live rounded-full bg-accent" /> CORE ONLINE
           </span>

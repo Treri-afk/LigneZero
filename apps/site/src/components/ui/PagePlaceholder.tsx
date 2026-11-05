@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useDocTitle } from '@/hooks/useDocTitle';
 import { HudFrame } from './HudFrame';
 import { Bracket } from './Bracket';
 
@@ -14,9 +14,7 @@ interface PagePlaceholderProps {
  * cadre HUD à équerres, label technique, hazard, glow retenu.
  */
 export function PagePlaceholder({ code, title, note }: PagePlaceholderProps) {
-  useEffect(() => {
-    document.title = `__BRAND__ // ${title}`;
-  }, [title]);
+  useDocTitle(title);
 
   return (
     <section className="mx-auto flex min-h-[60vh] max-w-7xl flex-col justify-center px-4 py-24 sm:px-6">

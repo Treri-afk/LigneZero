@@ -25,7 +25,7 @@ function layout(list: Sponsor[]) {
  * le centre. Clic → fiche. Effet 100% CSS (pas de filtre SVG → fluide).
  */
 export function SponsorHologram() {
-  const { sponsors } = useData();
+  const { sponsors, brand } = useData();
   const indexOf = (s: Sponsor) => sponsors.findIndex((x) => x.id === s.id);
   const [selected, setSelected] = useState<Sponsor | null>(null);
   const [hover, setHover] = useState<string | null>(null);
@@ -87,7 +87,7 @@ export function SponsorHologram() {
 
       {/* logo central de la structure */}
       <div className="absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2">
-        <Hologram text="__BRAND__" className="text-4xl sm:text-6xl" baseWidth={220} />
+        <Hologram text={brand.name} className="text-4xl sm:text-6xl" baseWidth={220} />
         <p className="mt-6 text-center font-mono text-[9px] uppercase tracking-hud text-[color:var(--text-mute)]">
           ◈ projection active ◈
         </p>

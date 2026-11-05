@@ -1,7 +1,8 @@
 import { BackdropWord, Bloom, BrandHeader, C, ChamferPanel, CornerTicks, DISPLAY, Frame, HazardBand, LogoBadge, MONO, TitleBlock, unit } from '../primitives';
 
 const WIN = '#4fd08a';
-import { BRAND, hashtags, lines } from '../caption';
+import { hashtags, lines } from '../caption';
+import { brandName } from '../brand';
 import type { FieldDef, StudioData, TemplateDef } from '../types';
 import { matchesOfWeek } from '../week';
 
@@ -144,7 +145,7 @@ export const resultsRecapTemplate: TemplateDef<ResultsRecapContent> = {
         competition: m.competition,
       };
     });
-    return { headline: 'RÉSULTATS', brand: BRAND, weekLabel: weekLabelOf(sel.weekStart), wins, losses, rows };
+    return { headline: 'RÉSULTATS', brand: brandName(), weekLabel: weekLabelOf(sel.weekStart), wins, losses, rows };
   },
   caption: (c) =>
     lines(

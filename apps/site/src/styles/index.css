@@ -621,3 +621,152 @@
 @media (prefers-reduced-motion: reduce) {
   .ret-in { animation: none; }
 }
+
+/* ── FX "wow" — éclair keycap, cutlines animées, hazard, mode match ── */
+
+/* Éclair rouge au clic d'un keycap : flash radial bref qui balaie la touche. */
+@keyframes kc-spark {
+  0% { opacity: 0.9; transform: scale(0.2); }
+  60% { opacity: 0.35; }
+  100% { opacity: 0; transform: scale(1.6); }
+}
+.kc-spark {
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+  background: radial-gradient(circle at center, var(--accent) 0%, rgba(226, 35, 29, 0.4) 30%, transparent 62%);
+  mix-blend-mode: screen;
+  animation: kc-spark 0.42s ease-out forwards;
+}
+
+/* Cutline animée : un trait/scan qui "dessine" le biseau d'un panneau au reveal. */
+@keyframes cutline-draw {
+  0% { clip-path: inset(0 100% 0 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+.cutline-draw > * { animation: cutline-draw 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@keyframes cutline-scan {
+  0% { transform: translateX(-100%); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+.cutline-scan::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--accent) 48%, transparent);
+  opacity: 0.5;
+  mix-blend-mode: screen;
+  animation: cutline-scan 0.9s ease-out both;
+}
+
+/* Bandes de danger DÉFILANTES (composant HazardBands en mode live). */
+@keyframes hazard-roll { to { background-position: 40px 0; } }
+.hazard-live {
+  background-image: repeating-linear-gradient(-45deg, var(--accent) 0 10px, var(--ink) 10px 20px);
+  background-size: 28.28px 28.28px;
+  animation: hazard-roll 0.6s linear infinite;
+}
+
+/* Bords "live" (mode match) : glow d'accent qui circule le long du viewport.
+   Propre (pas de diagonale crénelée). */
+@keyframes live-flow-y { to { background-position: 0 -220%; } }
+@keyframes live-flow-x { to { background-position: -220% 0; } }
+.live-edge-y {
+  background: linear-gradient(180deg, transparent 0%, var(--accent) 50%, transparent 100%);
+  background-size: 100% 220%;
+  animation: live-flow-y 1.3s linear infinite;
+}
+.live-edge-x {
+  background: linear-gradient(90deg, transparent 0%, var(--accent) 50%, transparent 100%);
+  background-size: 220% 100%;
+  animation: live-flow-x 1.3s linear infinite;
+}
+
+/* Thème CLAIR : neutralise les textures pensées pour le cockpit sombre. */
+.theme-light .crt-scan { opacity: 0 !important; }
+
+/* Pulsation "mode match" du site : liseré rouge qui respire. */
+@keyframes match-pulse {
+  0%, 100% { box-shadow: inset 0 0 0 0 rgba(226, 35, 29, 0); }
+  50% { box-shadow: inset 0 0 0 3px rgba(226, 35, 29, 0.55); }
+}
+.match-mode { animation: match-pulse 1.8s ease-in-out infinite; }
+
+/* Flash rouge global bref (déclenché au passage en live). */
+@keyframes match-flash { 0% { opacity: 0.5; } 100% { opacity: 0; } }
+.match-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 40%, rgba(226, 35, 29, 0.35), transparent 70%);
+  animation: match-flash 0.7s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kc-spark, .cutline-draw > *, .cutline-scan::after, .hazard-live, .live-edge-y, .live-edge-x, .match-mode, .match-flash { animation: none; }
+  .cutline-draw > * { clip-path: none; }
+  .match-flash { display: none; }
+}
+
+/* Wall de tickets collectés : tilt 3D + reflet foil au survol. */
+.ticket-tilt { perspective: 900px; }
+.ticket-tilt-card {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ticket-tilt:hover .ticket-tilt-card { transform: rotateX(7deg) rotateY(-9deg) translateY(-4px) scale(1.04); z-index: 5; }
+.ticket-tilt-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 32%, rgba(255, 255, 255, 0.55) 48%, transparent 64%);
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.ticket-tilt:hover .ticket-tilt-card::after { opacity: 0.85; }
+@media (prefers-reduced-motion: reduce) {
+  .ticket-tilt:hover .ticket-tilt-card { transform: translateY(-2px); }
+  .ticket-tilt-card::after { display: none; }
+}
+
+/* ── ÉQUIPE · déploiement de la fiche joueur ──────────────────────────
+   Jouées au MONTAGE des blocs débordants (la carte active remonte ses
+   éléments quand elle prend le focus). Les transforms d'animation sont
+   portées par des WRAPPERS : les éléments eux-mêmes gardent leur transform
+   inline (rotateY du point de fuite, rotation des chips), sinon l'animation
+   l'écraserait. */
+@keyframes fiche-stat-in {
+  from { opacity: 0; transform: translateX(26px) scale(0.86); }
+  to   { opacity: 1; transform: none; }
+}
+.fiche-stat-in { animation: fiche-stat-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+/* miroir pour les cartes situées à droite du centre (données renvoyées) */
+@keyframes fiche-stat-in-flip {
+  from { opacity: 0; transform: translateX(-26px) scale(0.86); }
+  to   { opacity: 1; transform: none; }
+}
+.fiche-stat-in-flip { animation: fiche-stat-in-flip 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@keyframes fiche-name-in {
+  from { opacity: 0; transform: scale(0.42); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.fiche-name-in { animation: fiche-name-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@keyframes fiche-meta-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+.fiche-meta-in { animation: fiche-meta-in 0.42s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fiche-stat-in, .fiche-stat-in-flip, .fiche-name-in, .fiche-meta-in {
+    animation: none;
+  }
+}

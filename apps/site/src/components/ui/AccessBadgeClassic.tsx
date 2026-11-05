@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useBrand } from '@/data/DataProvider';
 import type { Staff } from '@/types';
 import { MediaFrame } from '@/components/ui/MediaFrame';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -18,6 +19,7 @@ interface AccessBadgeClassicProps {
  * respecte prefers-reduced-motion (pas de balancement/scan, flip instantané).
  */
 export function AccessBadgeClassic({ staff, index }: AccessBadgeClassicProps) {
+  const brand = useBrand();
   const reduced = useReducedMotion();
   const [open, setOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
@@ -100,7 +102,7 @@ export function AccessBadgeClassic({ staff, index }: AccessBadgeClassicProps) {
           >
             {/* en-tête badge + LED statut */}
             <div className="flex items-center justify-between gap-2 border-b border-line-strong px-2.5 py-1.5">
-              <span className="hud-label text-[8px]">__BRAND__ · ACCÈS</span>
+              <span className="hud-label text-[8px]">{brand.name} · ACCÈS</span>
               <span className="flex items-center gap-1.5 font-mono text-[8px] uppercase tracking-hud">
                 <span
                   className="h-2 w-2 rounded-full transition-colors duration-ui"

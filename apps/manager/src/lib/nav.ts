@@ -44,6 +44,7 @@ export const NAV: NavItem[] = [
 
   // Contenu
   { path: '/social', label: 'Studio réseaux', code: 'SOC', section: 'Contenu', roles: CONTENT },
+  { path: '/studio-match', label: 'Studio match', code: 'MTK', section: 'Contenu', roles: CONTENT },
   { path: '/design', label: 'Studio graphique', code: 'GFX', section: 'Contenu', roles: ALL },
   { path: '/creators', label: 'Créateurs', code: 'CRT', section: 'Contenu', roles: CONTENT },
   { path: '/clips', label: 'Clips', code: 'CLP', section: 'Contenu', roles: CONTENT },
@@ -54,6 +55,10 @@ export const NAV: NavItem[] = [
   { path: '/parametres/agents', label: 'Agents & compétences', code: 'AGT', section: 'Paramètres', roles: DIR },
 
   // Admin
+  { path: '/identite', label: 'Identité', code: 'BRND', section: 'Admin', roles: ['admin'] },
+  { path: '/bot', label: 'Bot Twitch', code: 'BOT', section: 'Admin', roles: DIR },
+  { path: '/bot-discord', label: 'Bot Discord', code: 'DCRD', section: 'Admin', roles: DIR },
+  { path: '/analytics', label: 'Analytics bot', code: 'STAT', section: 'Admin', roles: DIR },
   { path: '/finance', label: 'Finance', code: 'FIN', section: 'Admin', roles: ['admin'] },
   { path: '/comptes', label: 'Comptes & rôles', code: 'ACL', section: 'Admin', roles: ['admin'] },
 ];

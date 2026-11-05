@@ -1,9 +1,11 @@
 import { useState, type FormEvent } from 'react';
+import { useBrand } from '@/lib/useBrand';
 import { useAuth } from '@/auth/AuthProvider';
 import { Button } from '@/components/ui';
 
 /** Écran d'authentification : connexion OU création de compte (auto-inscription). */
 export function LoginPage() {
+  const brand = useBrand();
   const { signIn, signUp } = useAuth();
   const [mode, setMode] = useState<'in' | 'up'>('in');
   const [name, setName] = useState('');
@@ -28,7 +30,7 @@ export function LoginPage() {
     <div className="relative z-10 flex min-h-screen items-center justify-center px-4">
       <div className="panel w-full max-w-sm shadow-ink">
         <div className="border-b border-line-strong px-6 py-5">
-          <p className="font-display text-xl font-bold uppercase tracking-hud">__BRAND__</p>
+          <p className="font-display text-xl font-bold uppercase tracking-hud">{brand.name}</p>
           <p className="hud-label text-[10px]">Console de gestion</p>
         </div>
 

@@ -21,6 +21,9 @@ import { liveNowTemplate } from './templates/liveNow';
 import { productDropTemplate } from './templates/productDrop';
 import { quoteTemplate } from './templates/quote';
 import { recruitmentTemplate } from './templates/recruitment';
+import { announcementTemplate } from './templates/announcement';
+import { milestoneTemplate } from './templates/milestone';
+import { streamScheduleTemplate } from './templates/streamSchedule';
 
 // Cast en TemplateDef générique : chaque def garde son type de contenu en
 // interne, mais le registry les manipule de façon homogène.
@@ -44,11 +47,14 @@ export const TEMPLATES: TemplateDef[] = [
   // Communauté
   clipTemplate,
   liveNowTemplate,
+  streamScheduleTemplate,
   // Boutique
   productDropTemplate,
   // Divers
   quoteTemplate,
   recruitmentTemplate,
+  announcementTemplate,
+  milestoneTemplate,
 ] as unknown as TemplateDef[];
 
 export function templateById(id: string): TemplateDef | undefined {

@@ -15,8 +15,9 @@ import { socials } from '@/data/socials';
 import { useData } from '@/data/DataProvider';
 import { getNextMatch } from '@/lib/format';
 
+/** `{brand}` est remplacé par le nom réel au rendu (voir Hero). */
 const TICKER = [
-  'WELCOME TO __BRAND__',
+  'WELCOME TO {brand}',
   'NEXT MATCH · VS NEMESIS · 21:00',
   'ROSTER ONLINE',
   'NEW DROP — JERSEY 2026',
@@ -38,7 +39,7 @@ function MiniStat({ to, label, suffix = '' }: { to: number; label: string; suffi
 
 export function Hero() {
   const stage = usePointerParallax<HTMLDivElement>();
-  const { matches, games } = useData();
+  const { matches, games, brand } = useData();
   const next = getNextMatch(matches);
   const nextTag = next ? games.find((g) => g.id === next.gameId)?.tag : undefined;
 
@@ -77,7 +78,7 @@ export function Hero() {
           </p>
 
           <h1 className="hud-title text-6xl font-bold leading-[0.92] sm:text-7xl xl:text-8xl">
-            <GlitchText as="span" text="__BRAND__" className="block glow-text" />
+            <GlitchText as="span" text={brand.name} className="block glow-text" />
             <span className="mt-2 block text-2xl font-medium text-[color:var(--text-dim)] sm:text-3xl">
               <TypeWriter text="> on ne suit pas le signal. on l'émet." />
             </span>
@@ -87,8 +88,8 @@ export function Hero() {
             <KeycapButton to="/equipe" size="lg" sound>
               &gt; L'équipe
             </KeycapButton>
-            <KeycapButton to="/calendrier" variant="secondary" size="lg" sound>
-              Calendrier
+            <KeycapButton to="/tournoi" variant="secondary" size="lg" sound>
+              Tournoi
             </KeycapButton>
           </div>
 
@@ -161,7 +162,7 @@ export function Hero() {
 
       {/* ticker bas */}
       <div className="absolute inset-x-0 bottom-0">
-        <MarqueeTicker items={TICKER} variant="dim" />
+        <MarqueeTicker items={TICKER.map((t) => t.replace('{brand}', brand.name))} variant="dim" />
       </div>
 
       {/* indice de scroll */}

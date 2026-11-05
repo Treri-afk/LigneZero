@@ -8,6 +8,7 @@ import { PlayerDashboard } from '@/pages/PlayerDashboard';
 import { PlayersPage } from '@/pages/PlayersPage';
 import { ResourcePage } from '@/resources/engine';
 import { SocialStudioPage } from '@/pages/SocialStudioPage';
+import { MatchStudioPage } from '@/pages/MatchStudioPage';
 import { MyAvailabilityPage } from '@/pages/MyAvailabilityPage';
 import { MyProfilePage } from '@/pages/MyProfilePage';
 import { ObjectivesPage } from '@/pages/ObjectivesPage';
@@ -22,6 +23,10 @@ import { MatchHubPage } from '@/pages/MatchHubPage';
 import { SponsorTrackingPage } from '@/pages/SponsorTrackingPage';
 import { DesignRequestsPage } from '@/pages/DesignRequestsPage';
 import { FinancePage } from '@/pages/FinancePage';
+import { BotPage } from '@/pages/BotPage';
+import { BotDiscordPage } from '@/pages/BotDiscordPage';
+import { BrandPage } from '@/pages/BrandPage';
+import { AnalyticsPage } from '@/pages/AnalyticsPage';
 import { CandidatesPage } from '@/pages/CandidatesPage';
 import { TryoutAvailabilityPage } from '@/pages/TryoutAvailabilityPage';
 import { PublicTryoutFormPage } from '@/pages/PublicTryoutFormPage';
@@ -102,6 +107,7 @@ function Gate() {
 
         {/* Contenu */}
         <Route path="/social" element={<SocialStudioPage />} />
+        <Route path="/studio-match" element={<MatchStudioPage />} />
         <Route path="/design" element={<DesignRequestsPage />} />
         <Route path="/creators" element={<ResourcePage config={creatorsConfig} canWrite={isContent} />} />
         <Route path="/clips" element={<ResourcePage config={clipsConfig} canWrite={isContent} />} />
@@ -112,6 +118,10 @@ function Gate() {
         <Route path="/parametres/agents" element={<AgentsSettingsPage />} />
 
         {/* Admin */}
+        <Route path="/identite" element={isAdmin ? <BrandPage /> : <Navigate to="/" replace />} />
+        <Route path="/bot" element={isManager ? <BotPage /> : <Navigate to="/" replace />} />
+        <Route path="/bot-discord" element={isManager ? <BotDiscordPage /> : <Navigate to="/" replace />} />
+        <Route path="/analytics" element={isManager ? <AnalyticsPage /> : <Navigate to="/" replace />} />
         <Route path="/finance" element={isAdmin ? <FinancePage /> : <Navigate to="/" replace />} />
         <Route path="/comptes" element={isAdmin ? <AccountsPage /> : <Navigate to="/" replace />} />
 

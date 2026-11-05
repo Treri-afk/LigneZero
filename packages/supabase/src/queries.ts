@@ -4,11 +4,21 @@
  * Écriture (manager) : upsert / remove. Les RLS imposent le rôle staff.
  */
 import type {
+  BrandSettings,
+  Tournament,
+  TournamentFull,
+  TournamentTeam,
+  TournamentPlayer,
+  TournamentStage,
+  TournamentMatch,
+  TournamentLobby,
+  LobbyEntry,
   Game,
   Player,
   Staff,
   Sponsor,
   Match,
+  MatchTicket,
   Creator,
   Clip,
   Product,
@@ -28,6 +38,24 @@ import type {
   InventoryItem,
   FavoriteMatch,
   MemberLinks,
+  BotConfig,
+  BotCommand,
+  BotEvent,
+  BotTimer,
+  BotQuote,
+  ViewerPoints,
+  BotReward,
+  RewardRedemption,
+  RedemptionStatus,
+  BotAlert,
+  MatchPrediction,
+  PredictionBet,
+  PredictionStatus,
+  PredictionTally,
+  BotNotification,
+  DiscordCommand,
+  DiscordRoute,
+  TicketTemplate,
   SponsorStatus,
   SponsorTracking,
   DesignRequest,
@@ -43,8 +71,26 @@ import type {
   ValorantAgent,
   ValorantAbility,
 } from '@lignezero/types';
+// Valeur (pas un type) : repli quand la table de marque n'est pas renseignée.
+import { DEFAULT_BRAND } from '@lignezero/types';
 import type { LigneZeroClient } from './client';
 import {
+  fromTournamentRow,
+  toTournamentRow,
+  fromTournamentTeamRow,
+  toTournamentTeamRow,
+  fromTournamentPlayerRow,
+  toTournamentPlayerRow,
+  fromTournamentStageRow,
+  toTournamentStageRow,
+  fromTournamentMatchRow,
+  toTournamentMatchRow,
+  fromLobbyRow,
+  toLobbyRow,
+  fromLobbyEntryRow,
+  toLobbyEntryRow,
+  fromBrandSettingsRow,
+  toBrandSettingsRow,
   fromGameRow,
   fromPlayerRow,
   fromStaffRow,
@@ -87,6 +133,28 @@ import {
   toFavoriteMatchRow,
   fromMemberLinksRow,
   toMemberLinksRow,
+  fromBotConfigRow,
+  toBotConfigRow,
+  fromBotCommandRow,
+  toBotCommandRow,
+  fromBotEventRow,
+  fromBotTimerRow,
+  toBotTimerRow,
+  fromBotQuoteRow,
+  fromViewerPointsRow,
+  fromBotRewardRow,
+  toBotRewardRow,
+  fromRewardRedemptionRow,
+  fromBotAlertRow,
+  toBotAlertRow,
+  fromMatchPredictionRow,
+  fromPredictionBetRow,
+  fromBotNotificationRow,
+  fromDiscordCommandRow,
+  toDiscordCommandRow,
+  fromDiscordRouteRow,
+  toDiscordRouteRow,
+  fromTicketTemplateRow,
   fromSponsorTrackingRow,
   toSponsorTrackingRow,
   fromDesignRequestRow,
@@ -222,6 +290,14 @@ export function createQueries(sb: LigneZeroClient) {
     },
     async removeMatch(id: string): Promise<void> {
       const { error } = await sb.from('matches').delete().eq('id', id);
+      unwrap(null, error);
+    },
+    /** Enregistre les paramètres du ticket d'un match (Studio Match). */
+    async setMatchTicket(id: string, ticket: MatchTicket): Promise<void> {
+      const { error } = await sb
+        .from('matches')
+        .update({ ticket: ticket as unknown as import('./database.types').TablesInsert<'matches'>['ticket'] })
+        .eq('id', id);
       unwrap(null, error);
     },
 
@@ -473,6 +549,365 @@ export function createQueries(sb: LigneZeroClient) {
       if (!uid) throw new Error('[supabase] Non connecté.');
       const { error } = await sb.from('member_links').upsert(toMemberLinksRow({ ownerId: uid, ...links }));
       unwrap(null, error);
+    },
+    /**
+     * Synchronise member_links depuis les identités OAuth liées (Twitch/Discord).
+     * Appelé après un linkIdentity : renseigne handle + user_id fiables pour le bot.
+     */
+    async syncMyLinksFromIdentities(): Promise<MemberLinks | null> {
+      const { data: u } = await sb.auth.getUser();
+      const uid = u.user?.id;
+      if (!uid) throw new Error('[supabase] Non connecté.');
+      const identities = u.user?.identities ?? [];
+      const pick = (provider: string) => identities.find((i) => i.provider === provider);
+      const idData = (i?: { identity_data?: Record<string, unknown> | null }) => (i?.identity_data ?? {}) as Record<string, unknown>;
+      const str = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
+      const tw = pick('twitch');
+      const dc = pick('discord');
+      const twd = idData(tw);
+      const dcd = idData(dc);
+      const { data: exRow } = await sb.from('member_links').select('*').eq('owner_id', uid).maybeSingle();
+      const existing = exRow ? fromMemberLinksRow(exRow) : null;
+      const next: MemberLinks = {
+        ownerId: uid,
+        twitchHandle: str(twd.preferred_username) ?? str(twd.nickname) ?? str(twd.name) ?? existing?.twitchHandle,
+        twitchUserId: tw?.id ?? str(twd.sub) ?? existing?.twitchUserId,
+        discordHandle: str(dcd.preferred_username) ?? str(dcd.full_name) ?? str(dcd.name) ?? existing?.discordHandle,
+        discordUserId: dc?.id ?? str(dcd.sub) ?? str(dcd.provider_id) ?? existing?.discordUserId,
+      };
+      const { error } = await sb.from('member_links').upsert(toMemberLinksRow(next));
+      unwrap(null, error);
+      return next;
+    },
+
+    // ── Prédictions côté vitrine (widget live) ──
+    async getOpenPrediction(): Promise<MatchPrediction | null> {
+      const { data, error } = await sb.from('match_predictions').select('*').in('status', ['open', 'locked']).order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (error) throw error;
+      return data ? fromMatchPredictionRow(data) : null;
+    },
+    async predictionTally(id: string): Promise<PredictionTally | null> {
+      const { data, error } = await sb.rpc('prediction_tally', { p_prediction_id: id });
+      if (error) throw error;
+      return (data as unknown as PredictionTally) ?? null;
+    },
+    /** Solde de points du membre connecté (via son login Twitch lié). */
+    async getMyPoints(): Promise<{ linked: boolean; login?: string; points: number; watchMinutes: number }> {
+      const { data, error } = await sb.rpc('my_points');
+      if (error) throw error;
+      const r = (data ?? { linked: false }) as { linked: boolean; login?: string; points?: number; watch_minutes?: number };
+      return { linked: r.linked, login: r.login, points: r.points ?? 0, watchMinutes: r.watch_minutes ?? 0 };
+    },
+    /** Place une mise depuis la vitrine (nécessite un compte Twitch lié). */
+    async placeMyBet(predictionId: string, optionIndex: number, amount: number): Promise<{ ok: boolean; reason?: string; remaining?: number }> {
+      const { data: u } = await sb.auth.getUser();
+      const uid = u.user?.id;
+      if (!uid) return { ok: false, reason: 'not_signed_in' };
+      const { data: lk } = await sb.from('member_links').select('twitch_handle').eq('owner_id', uid).maybeSingle();
+      const login = lk?.twitch_handle;
+      if (!login) return { ok: false, reason: 'not_linked' };
+      const { data, error } = await sb.rpc('place_bet', { p_login: login.toLowerCase(), p_owner: uid, p_prediction_id: predictionId, p_option: optionIndex, p_amount: amount });
+      if (error) throw error;
+      return (data ?? { ok: false }) as unknown as { ok: boolean; reason?: string; remaining?: number };
+    },
+
+    // ── Tournois organisés (lecture publique hors brouillons) ──
+    async listTournaments(): Promise<Tournament[]> {
+      const { data, error } = await sb.from('tournaments').select('*').order('starts_at', { ascending: false });
+      return unwrap(data, error).map(fromTournamentRow);
+    },
+    /** Tournoi + équipes + joueurs + phases + matchs, en une passe. */
+    async getTournament(slug: string): Promise<TournamentFull | null> {
+      const { data: t, error } = await sb.from('tournaments').select('*').eq('slug', slug).maybeSingle();
+      if (error) throw error;
+      if (!t) return null;
+      const [teams, stages, matches, lobbies] = await Promise.all([
+        sb.from('tournament_teams').select('*').eq('tournament_id', t.id).order('seed', { nullsFirst: false }),
+        sb.from('tournament_stages').select('*').eq('tournament_id', t.id).order('sort_order'),
+        sb.from('tournament_matches').select('*').eq('tournament_id', t.id).order('round').order('position'),
+        sb.from('tournament_lobbies').select('*').eq('tournament_id', t.id).order('round').order('position'),
+      ]);
+      const teamRows = unwrap(teams.data, teams.error).map(fromTournamentTeamRow);
+      // Les joueurs arrivent en une requête puis sont répartis dans leur équipe,
+      // pour éviter une requête par équipe.
+      if (teamRows.length) {
+        const { data: pl, error: plErr } = await sb
+          .from('tournament_players')
+          .select('*')
+          .in('team_id', teamRows.map((x) => x.id))
+          .order('sort_order');
+        const players = unwrap(pl, plErr).map(fromTournamentPlayerRow);
+        for (const team of teamRows) team.players = players.filter((x) => x.teamId === team.id);
+      }
+      // Les participations arrivent en une requête puis sont réparties dans
+      // leur lobby — même logique que les joueurs, pour éviter N requêtes.
+      const lobbyRows = unwrap(lobbies.data, lobbies.error).map(fromLobbyRow);
+      if (lobbyRows.length) {
+        const { data: en, error: enErr } = await sb
+          .from('tournament_lobby_entries')
+          .select('*')
+          .in('lobby_id', lobbyRows.map((x) => x.id))
+          .order('sort_order');
+        const entries = unwrap(en, enErr).map(fromLobbyEntryRow);
+        for (const lob of lobbyRows) lob.entries = entries.filter((e) => e.lobbyId === lob.id);
+      }
+
+      return {
+        ...fromTournamentRow(t),
+        teams: teamRows,
+        stages: unwrap(stages.data, stages.error).map(fromTournamentStageRow),
+        matches: unwrap(matches.data, matches.error).map(fromTournamentMatchRow),
+        lobbies: lobbyRows,
+      };
+    },
+    async upsertTournament(t: Tournament): Promise<void> {
+      const { error } = await sb.from('tournaments').upsert(toTournamentRow(t));
+      unwrap(null, error);
+    },
+    async deleteTournament(id: string): Promise<void> {
+      const { error } = await sb.from('tournaments').delete().eq('id', id);
+      unwrap(null, error);
+    },
+    async upsertTournamentTeam(t: TournamentTeam): Promise<void> {
+      const { error } = await sb.from('tournament_teams').upsert(toTournamentTeamRow(t));
+      unwrap(null, error);
+    },
+    async deleteTournamentTeam(id: string): Promise<void> {
+      const { error } = await sb.from('tournament_teams').delete().eq('id', id);
+      unwrap(null, error);
+    },
+    async upsertTournamentPlayer(p: TournamentPlayer): Promise<void> {
+      const { error } = await sb.from('tournament_players').upsert(toTournamentPlayerRow(p));
+      unwrap(null, error);
+    },
+    async deleteTournamentPlayer(id: string): Promise<void> {
+      const { error } = await sb.from('tournament_players').delete().eq('id', id);
+      unwrap(null, error);
+    },
+    async upsertTournamentStage(st: TournamentStage): Promise<void> {
+      const { error } = await sb.from('tournament_stages').upsert(toTournamentStageRow(st));
+      unwrap(null, error);
+    },
+    /** Écriture en lot : génération d'un arbre complet en une requête. */
+    async upsertTournamentMatches(list: TournamentMatch[]): Promise<void> {
+      if (!list.length) return;
+      const { error } = await sb.from('tournament_matches').upsert(list.map(toTournamentMatchRow));
+      unwrap(null, error);
+    },
+    async upsertTournamentLobbies(list: TournamentLobby[]): Promise<void> {
+      if (!list.length) return;
+      const { error } = await sb.from('tournament_lobbies').upsert(list.map(toLobbyRow));
+      unwrap(null, error);
+    },
+    async upsertLobbyEntries(list: LobbyEntry[]): Promise<void> {
+      if (!list.length) return;
+      const { error } = await sb.from('tournament_lobby_entries').upsert(list.map(toLobbyEntryRow));
+      unwrap(null, error);
+    },
+    /** Supprime les lobbies d'un round (ou tous si `round` est omis). */
+    async deleteTournamentLobbies(tournamentId: string, round?: number): Promise<void> {
+      let q = sb.from('tournament_lobbies').delete().eq('tournament_id', tournamentId);
+      if (round != null) q = q.eq('round', round);
+      const { error } = await q;
+      unwrap(null, error);
+    },
+    async deleteTournamentMatches(tournamentId: string): Promise<void> {
+      const { error } = await sb.from('tournament_matches').delete().eq('tournament_id', tournamentId);
+      unwrap(null, error);
+    },
+
+    // ── Identité de marque (lecture publique, écriture admin) ──
+    /** Ligne unique. Renvoie les valeurs par défaut si elle manque, pour que la
+     *  vitrine reste affichable même sans configuration. */
+    async getBrandSettings(): Promise<BrandSettings> {
+      const { data, error } = await sb.from('brand_settings').select('*').eq('id', 'default').maybeSingle();
+      if (error) throw error;
+      return data ? fromBrandSettingsRow(data) : DEFAULT_BRAND;
+    },
+    async setBrandSettings(b: BrandSettings): Promise<void> {
+      const { error } = await sb.from('brand_settings').upsert(toBrandSettingsRow(b));
+      unwrap(null, error);
+    },
+
+    // ── Bot Twitch (admin/manager) ──
+    async getBotConfig(): Promise<BotConfig | null> {
+      const { data, error } = await sb.from('bot_config').select('*').eq('id', true).maybeSingle();
+      if (error) throw error;
+      return data ? fromBotConfigRow(data) : null;
+    },
+    async setBotConfig(cfg: BotConfig): Promise<void> {
+      const { error } = await sb.from('bot_config').upsert(toBotConfigRow(cfg));
+      unwrap(null, error);
+    },
+    async listBotCommands(): Promise<BotCommand[]> {
+      const { data, error } = await sb.from('bot_commands').select('*').order('trigger');
+      return unwrap(data, error).map(fromBotCommandRow);
+    },
+    async upsertBotCommand(c: BotCommand): Promise<void> {
+      const { error } = await sb.from('bot_commands').upsert(toBotCommandRow(c));
+      unwrap(null, error);
+    },
+    async removeBotCommand(id: string): Promise<void> {
+      const { error } = await sb.from('bot_commands').delete().eq('id', id);
+      unwrap(null, error);
+    },
+    async listBotEvents(limit = 100): Promise<BotEvent[]> {
+      const { data, error } = await sb.from('bot_events').select('*').order('created_at', { ascending: false }).limit(limit);
+      return unwrap(data, error).map(fromBotEventRow);
+    },
+    async listBotTimers(): Promise<BotTimer[]> {
+      const { data, error } = await sb.from('bot_timers').select('*').order('created_at');
+      return unwrap(data, error).map(fromBotTimerRow);
+    },
+    async upsertBotTimer(t: BotTimer): Promise<void> {
+      const { error } = await sb.from('bot_timers').upsert(toBotTimerRow(t));
+      unwrap(null, error);
+    },
+    async removeBotTimer(id: string): Promise<void> {
+      const { error } = await sb.from('bot_timers').delete().eq('id', id);
+      unwrap(null, error);
+    },
+    async listBotQuotes(): Promise<BotQuote[]> {
+      const { data, error } = await sb.from('bot_quotes').select('*').order('id', { ascending: false });
+      return unwrap(data, error).map(fromBotQuoteRow);
+    },
+    async addBotQuote(text: string, addedBy?: string): Promise<void> {
+      const { error } = await sb.from('bot_quotes').insert({ text, added_by: addedBy ?? null });
+      unwrap(null, error);
+    },
+    async removeBotQuote(id: number): Promise<void> {
+      const { error } = await sb.from('bot_quotes').delete().eq('id', id);
+      unwrap(null, error);
+    },
+    async listViewerPoints(limit = 20): Promise<ViewerPoints[]> {
+      const { data, error } = await sb.from('viewer_points').select('*').order('points', { ascending: false }).limit(limit);
+      return unwrap(data, error).map(fromViewerPointsRow);
+    },
+    /** Ajuste manuellement les points d'un viewer (staff). Renvoie le nouveau solde. */
+    async adjustViewerPoints(login: string, delta: number): Promise<number> {
+      const { data, error } = await sb.rpc('adjust_points', { p_login: login.trim().toLowerCase(), p_owner: null, p_delta: delta, p_allow_negative: true });
+      if (error) throw error;
+      const res = (data ?? {}) as { remaining?: number };
+      return res.remaining ?? 0;
+    },
+    /** Diffuse une notification à tous les membres liés Discord. Renvoie le nb de destinataires. */
+    async broadcastNotification(kind: string, title: string, body?: string): Promise<number> {
+      const { data, error } = await sb.rpc('broadcast_notification', { p_kind: kind, p_title: title, p_body: body ?? '' });
+      if (error) throw error;
+      return (data as number) ?? 0;
+    },
+
+    // ── Boutique de points ──
+    async listBotRewards(): Promise<BotReward[]> {
+      const { data, error } = await sb.from('bot_rewards').select('*').order('sort_order');
+      return unwrap(data, error).map(fromBotRewardRow);
+    },
+    async upsertBotReward(r: BotReward): Promise<void> {
+      const { error } = await sb.from('bot_rewards').upsert(toBotRewardRow(r));
+      unwrap(null, error);
+    },
+    async removeBotReward(id: string): Promise<void> {
+      const { error } = await sb.from('bot_rewards').delete().eq('id', id);
+      unwrap(null, error);
+    },
+    async listRedemptions(status?: RedemptionStatus): Promise<RewardRedemption[]> {
+      let q = sb.from('reward_redemptions').select('*').order('created_at', { ascending: false }).limit(100);
+      if (status) q = q.eq('status', status);
+      const { data, error } = await q;
+      return unwrap(data, error).map(fromRewardRedemptionRow);
+    },
+    async setRedemptionStatus(id: string, status: RedemptionStatus, note?: string): Promise<void> {
+      const { error } = await sb.from('reward_redemptions').update({ status, note: note ?? null, decided_at: new Date().toISOString() }).eq('id', id);
+      unwrap(null, error);
+    },
+
+    // ── Alertes ──
+    async listBotAlerts(): Promise<BotAlert[]> {
+      const { data, error } = await sb.from('bot_alerts').select('*').order('event_type');
+      return unwrap(data, error).map(fromBotAlertRow);
+    },
+    async upsertBotAlert(a: BotAlert): Promise<void> {
+      const { error } = await sb.from('bot_alerts').upsert(toBotAlertRow(a), { onConflict: 'event_type' });
+      unwrap(null, error);
+    },
+
+    // ── Prédictions ──
+    async listPredictions(): Promise<MatchPrediction[]> {
+      const { data, error } = await sb.from('match_predictions').select('*').order('created_at', { ascending: false }).limit(50);
+      return unwrap(data, error).map(fromMatchPredictionRow);
+    },
+    async createPrediction(question: string, options: string[], matchId?: string): Promise<void> {
+      const { error } = await sb.from('match_predictions').insert({ question, options, match_id: matchId ?? null, status: 'open' });
+      unwrap(null, error);
+    },
+    async setPredictionStatus(id: string, status: PredictionStatus): Promise<void> {
+      const { error } = await sb.from('match_predictions').update({ status }).eq('id', id);
+      unwrap(null, error);
+    },
+    async resolvePrediction(id: string, winningOption: number): Promise<void> {
+      const { error } = await sb.rpc('resolve_prediction', { p_prediction_id: id, p_winning: winningOption });
+      unwrap(null, error);
+    },
+    async listPredictionBets(predictionId: string): Promise<PredictionBet[]> {
+      const { data, error } = await sb.from('prediction_bets').select('*').eq('prediction_id', predictionId);
+      return unwrap(data, error).map(fromPredictionBetRow);
+    },
+
+    // ── Notifications (file livrée par le bot Discord) ──
+    async queueNotification(n: { ownerId?: string; playerId?: string; kind: string; title: string; body?: string }): Promise<void> {
+      const { error } = await sb.from('bot_notifications').insert({
+        owner_id: n.ownerId ?? null, player_id: n.playerId ?? null, kind: n.kind, title: n.title, body: n.body ?? null,
+      });
+      unwrap(null, error);
+    },
+    async listNotifications(limit = 50): Promise<BotNotification[]> {
+      const { data, error } = await sb.from('bot_notifications').select('*').order('created_at', { ascending: false }).limit(limit);
+      return unwrap(data, error).map(fromBotNotificationRow);
+    },
+
+    // ── Bot Discord : commandes custom + routage ──
+    async listDiscordCommands(): Promise<DiscordCommand[]> {
+      const { data, error } = await sb.from('discord_commands').select('*').order('trigger');
+      return unwrap(data, error).map(fromDiscordCommandRow);
+    },
+    async upsertDiscordCommand(c: DiscordCommand): Promise<void> {
+      const { error } = await sb.from('discord_commands').upsert(toDiscordCommandRow(c));
+      unwrap(null, error);
+    },
+    async removeDiscordCommand(id: string): Promise<void> {
+      const { error } = await sb.from('discord_commands').delete().eq('id', id);
+      unwrap(null, error);
+    },
+    async listDiscordRoutes(): Promise<DiscordRoute[]> {
+      const { data, error } = await sb.from('discord_routes').select('*').order('kind');
+      return unwrap(data, error).map(fromDiscordRouteRow);
+    },
+    async upsertDiscordRoute(r: DiscordRoute): Promise<void> {
+      const { error } = await sb.from('discord_routes').upsert(toDiscordRouteRow(r), { onConflict: 'kind' });
+      unwrap(null, error);
+    },
+
+    // ── Templates de tickets (Studio Match) ──
+    async listTicketTemplates(): Promise<TicketTemplate[]> {
+      const { data, error } = await sb.from('ticket_templates').select('*').order('created_at', { ascending: false });
+      return unwrap(data, error).map(fromTicketTemplateRow);
+    },
+    async saveTicketTemplate(name: string, doc: TicketTemplate['doc']): Promise<void> {
+      const { error } = await sb.from('ticket_templates').insert({ name, doc: doc as unknown as import('./database.types').Json });
+      unwrap(null, error);
+    },
+    async removeTicketTemplate(id: string): Promise<void> {
+      const { error } = await sb.from('ticket_templates').delete().eq('id', id);
+      unwrap(null, error);
+    },
+    /** Notifie un joueur (résout le compte depuis la fiche joueur). Best-effort, n'échoue jamais. */
+    async notifyPlayer(playerId: string, kind: string, title: string, body?: string): Promise<void> {
+      try {
+        const { data } = await sb.from('profiles').select('id').eq('player_id', playerId).maybeSingle();
+        await sb.from('bot_notifications').insert({ owner_id: data?.id ?? null, player_id: playerId, kind, title, body: body ?? null });
+      } catch {
+        /* la notification Discord est un bonus : ne bloque jamais l'action principale */
+      }
     },
 
     // ── Suivi sponsors (privé manager) ──

@@ -1,6 +1,7 @@
 import type { Player } from '@lignezero/types';
 import { BackdropWord, Bloom, BrandHeader, C, ConeHeadline, DISPLAY, Frame, Glow, HazardBand, MONO, Silhouette, shade, unit } from '../primitives';
-import { BRAND, hashtags, lines } from '../caption';
+import { hashtags, lines } from '../caption';
+import { brandName } from '../brand';
 import type { FieldDef, StudioData, TemplateDef } from '../types';
 
 export interface SigningContent {
@@ -110,7 +111,7 @@ export const signingTemplate: TemplateDef<SigningContent> = {
     const g = data.games.find((x) => x.id === p.gameId);
     return {
       headline: 'WELCOME',
-      brand: BRAND,
+      brand: brandName(),
       playerName: p.pseudo,
       playerRole: p.role,
       gameTag: g?.tag ?? '—',
@@ -146,7 +147,7 @@ export const farewellTemplate: TemplateDef<SigningContent> = {
     const g = data.games.find((x) => x.id === p.gameId);
     return {
       headline: 'MERCI',
-      brand: BRAND,
+      brand: brandName(),
       playerName: p.pseudo,
       playerRole: p.role,
       gameTag: g?.tag ?? '—',

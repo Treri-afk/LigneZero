@@ -38,7 +38,7 @@ export default {
         },
       },
       fontFamily: {
-        display: ['"Chakra Petch"', 'sans-serif'], // titres techniques
+        display: ['Anton', 'Impact', 'sans-serif'], // titres massifs
         mono: ['"JetBrains Mono"', 'monospace'], // data / labels
         sans: ['Inter', 'system-ui', 'sans-serif'], // corps
       },

@@ -1,0 +1,88 @@
+/* Filet de progression. Les couleurs viennent de la DA hôte (voir chaque *.css). */
+.lz-line {
+  --lz-progress: 0;
+  --lz-rule: rgba(128, 128, 128, 0.25);
+  --lz-fill-color: currentColor;
+  --lz-text: rgba(128, 128, 128, 0.7);
+
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: clamp(0.7rem, 1.5vw, 1.6rem);
+  z-index: 40;
+  width: 1px;
+  pointer-events: none;
+}
+
+.lz-line__rule,
+.lz-line__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 1px;
+}
+
+.lz-line__rule {
+  background: var(--lz-rule);
+}
+
+.lz-line__fill {
+  background: var(--lz-fill-color);
+  transform: scaleY(var(--lz-progress));
+  transform-origin: top;
+}
+
+.lz-line__ticks {
+  position: absolute;
+  inset: 22vh 0 22vh 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.lz-line__tick {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.lz-line__dot {
+  width: 9px;
+  height: 1px;
+  margin-left: -4px;
+  background: var(--lz-rule);
+  transition:
+    width 520ms cubic-bezier(0.32, 0.72, 0, 1),
+    background 520ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.lz-line__tick[data-active='true'] .lz-line__dot {
+  width: 20px;
+  background: var(--lz-fill-color);
+}
+
+.lz-line__label {
+  position: absolute;
+  left: 1.4rem;
+  font-size: 0.5rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--lz-text);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity 520ms cubic-bezier(0.32, 0.72, 0, 1),
+    transform 520ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.lz-line__tick[data-active='true'] .lz-line__label {
+  opacity: 1;
+  transform: none;
+}
+
+/* Pas assez de marge latérale : le filet gênerait le contenu. */
+@media (max-width: 1240px) {
+  .lz-line {
+    display: none;
+  }
+}

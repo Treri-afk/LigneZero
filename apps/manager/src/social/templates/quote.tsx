@@ -1,5 +1,6 @@
 import { BackdropWord, Bloom, BrandHeader, C, DISPLAY, Frame, HazardBand, MONO, unit } from '../primitives';
-import { BRAND, hashtags, lines } from '../caption';
+import { hashtags, lines } from '../caption';
+import { brandName } from '../brand';
 import type { FieldDef, TemplateDef } from '../types';
 
 export interface QuoteContent {
@@ -56,7 +57,7 @@ export const quoteTemplate: TemplateDef<QuoteContent> = {
   fields: FIELDS,
   Visual: QuoteVisual,
   fromData: () => ({
-    brand: BRAND,
+    brand: brandName(),
     quote: 'On ne joue pas pour participer.',
     author: 'LE COACH',
     role: 'Avant le derby',

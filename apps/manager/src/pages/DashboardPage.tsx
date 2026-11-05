@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useBrand } from '@/lib/useBrand';
 import { Link } from 'react-router-dom';
 import { db } from '@/lib/supabase';
 import { NAV, navFor } from '@/lib/nav';
@@ -11,6 +12,7 @@ type Counts = Record<string, number>;
 
 /** Vue d'ensemble : nombre d'entrées par entité (données live). */
 export function DashboardPage() {
+  const brand = useBrand();
   const { role } = useAuth();
   const [counts, setCounts] = useState<Counts | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export function DashboardPage() {
   return (
     <div>
       <header className="mb-8">
-        <p className="hud-label text-[11px]">__BRAND__ // Console</p>
+        <p className="hud-label text-[11px]">{brand.name} // Console</p>
         <h1 className="font-display text-3xl font-bold uppercase tracking-hud">Tableau de bord</h1>
       </header>
 

@@ -3,11 +3,10 @@
  * propre fonction `caption(content)` ; ces utilitaires évitent d'y dupliquer la
  * logique de hashtags / hôte de stream / nettoyage.
  *
- * `__BRAND__` reste tel quel (remplacé au find-replace global avant prod).
+ * Le nom de la structure vient de `./brand` (réglé dans le manager, page
+ * Identité) — plus de placeholder codé en dur.
  */
-
-/** Nom de la structure (placeholder remplacé au find-replace global). */
-export const BRAND = '__BRAND__';
+import { brandName } from './brand';
 
 /** Slug hashtag depuis un libellé (retire accents/espaces/ponctuation). */
 export function tag(s: string): string {
@@ -17,9 +16,9 @@ export function tag(s: string): string {
     .replace(/[^a-zA-Z0-9]/g, '');
 }
 
-/** Bloc de hashtags standard : #__BRAND__ #<jeu> #esport + extras. */
+/** Bloc de hashtags standard : #<marque> #<jeu> #esport + extras. */
 export function hashtags(gameTag?: string, extra: string[] = []): string {
-  return ['#__BRAND__', gameTag ? `#${tag(gameTag)}` : '', '#esport', ...extra.map((e) => `#${tag(e)}`)]
+  return [`#${tag(brandName())}`, gameTag ? `#${tag(gameTag)}` : '', '#esport', ...extra.map((e) => `#${tag(e)}`)]
     .filter(Boolean)
     .join(' ');
 }

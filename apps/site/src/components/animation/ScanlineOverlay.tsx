@@ -13,12 +13,12 @@ interface ScanlineOverlayProps {
 export function ScanlineOverlay({ opacity = 0.06, sweep = false, className = '' }: ScanlineOverlayProps) {
   return (
     <div aria-hidden className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}>
-      {/* lignes horizontales fines */}
+      {/* lignes horizontales fines (texture cockpit sombre — masquée en thème clair) */}
       <div
-        className="absolute inset-0 animate-flicker"
+        className="crt-scan absolute inset-0 animate-flicker"
         style={{
           opacity,
-          backgroundImage: 'repeating-linear-gradient(0deg, #000 0 1px, transparent 1px 3px)',
+          backgroundImage: 'repeating-linear-gradient(0deg, var(--ink) 0 1px, transparent 1px 3px)',
         }}
       />
       {/* barre de balayage néon */}

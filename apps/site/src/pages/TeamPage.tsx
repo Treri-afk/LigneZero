@@ -12,7 +12,7 @@ export default function TeamPage() {
         <PageHeader
           code="01"
           title="Équipe"
-          subtitle="Choisis un jeu, puis un joueur pour afficher sa fiche complète."
+          subtitle="Trois joueurs, trois cartes. Survole-en une pour la redresser et déployer sa fiche."
           meta={
             <span className="hud-title text-5xl font-bold text-accent glow-text">
               {String(players.length).padStart(2, '0')}

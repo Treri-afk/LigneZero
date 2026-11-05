@@ -1,13 +1,14 @@
 import { useData } from '@/data/DataProvider';
-import { getLiveMatch } from '@/lib/format';
+import { useLiveMatch } from '@/hooks/useLiveMatch';
 
 /**
  * Bandeau "LIVE NOW" sticky, affiché uniquement quand un match est en cours.
  * Pulse en rouge, montre l'affiche + score + lien stream. Site-wide.
+ * Temps réel : suit les changements de statut/score via Supabase Realtime.
  */
 export function LiveBar() {
-  const { matches, games } = useData();
-  const live = getLiveMatch(matches);
+  const { games, brand } = useData();
+  const live = useLiveMatch();
   if (!live) return null;
 
   const tag = games.find((g) => g.id === live.gameId)?.tag ?? '—';
@@ -21,7 +22,7 @@ export function LiveBar() {
         </span>
 
         <p className="min-w-0 flex-1 truncate font-mono text-xs uppercase tracking-hud text-[color:var(--text-dim)]">
-          <span className="text-accent">[{tag}]</span> __BRAND__{' '}
+          <span className="text-accent">[{tag}]</span> {brand.name}{' '}
           {live.score && (
             <span className="font-bold text-[color:var(--text)]">
               {live.score.us}–{live.score.them}

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useBrand } from '@/lib/useBrand';
 import { NavLink } from 'react-router-dom';
 import { navFor, SECTION_ORDER } from '@/lib/nav';
 import { useAuth } from '@/auth/AuthProvider';
@@ -6,6 +7,7 @@ import { Button } from '@/components/ui';
 
 /** Coquille du manager : sidebar (sections filtrées par rôle) + contenu. */
 export function Layout({ children }: { children: ReactNode }) {
+  const brand = useBrand();
   const { session, role, signOut } = useAuth();
   const items = navFor(role);
 
@@ -13,7 +15,7 @@ export function Layout({ children }: { children: ReactNode }) {
     <div className="relative z-10 flex min-h-screen">
       <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r border-line-strong bg-base-800">
         <div className="border-b border-line-strong px-5 py-4">
-          <p className="font-display text-lg font-bold uppercase tracking-hud">__BRAND__</p>
+          <p className="font-display text-lg font-bold uppercase tracking-hud">{brand.name}</p>
           <p className="hud-label text-[10px]">Console de gestion</p>
         </div>
 

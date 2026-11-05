@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useDocTitle } from '@/hooks/useDocTitle';
 import { KeycapButton } from '@/components/ui/KeycapButton';
 import { KeycapCard } from '@/components/ui/KeycapCard';
 import { HudFrame } from '@/components/ui/HudFrame';
@@ -37,9 +37,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function DemoPage() {
   const reveal = useScrollReveal<HTMLDivElement>();
 
-  useEffect(() => {
-    document.title = '__BRAND__ // Demo kit';
-  }, []);
+  useDocTitle('Demo kit');
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6">

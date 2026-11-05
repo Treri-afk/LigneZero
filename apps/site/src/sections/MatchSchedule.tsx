@@ -34,7 +34,7 @@ function FilterBtn({ active, onClick, children }: { active: boolean; onClick: ()
 
 /** Agenda matchs — filtres jeu/statut, tri chrono. Données data/matches.ts. */
 export function MatchSchedule() {
-  const { matches, games } = useData();
+  const { matches, games, brand } = useData();
   const { session } = useAuth();
   const [game, setGame] = useState<string>(ALL);
   const [status, setStatus] = useState<MatchStatus | typeof ALL>(ALL);
@@ -134,7 +134,7 @@ export function MatchSchedule() {
                   <span className="text-accent">[{gameTag(m.gameId)}]</span> {m.competition}
                 </p>
                 <p className="hud-title text-xl font-bold leading-none">
-                  <span className="text-[color:var(--text-dim)]">__BRAND__</span>
+                  <span className="text-[color:var(--text-dim)]">{brand.name}</span>
                   <span className="mx-2 text-[color:var(--text-mute)]">vs</span>
                   {m.opponent.name}
                 </p>

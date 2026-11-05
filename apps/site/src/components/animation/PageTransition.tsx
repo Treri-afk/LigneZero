@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { gsap } from '@/lib/gsap';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { playWhoosh } from '@/lib/sound';
 
 /**
  * Séquence de "boot" mécanique à chaque changement de route :
@@ -29,7 +30,9 @@ export function PageTransition() {
     if (reduced || !overlay.current) return;
 
     const slabs = overlay.current.querySelectorAll<HTMLElement>('[data-slab]');
+    const brackets = overlay.current.querySelectorAll<HTMLElement>('[data-bracket]');
     const tl = gsap.timeline();
+    playWhoosh();
 
     // 1. plaques en place (couvrent) → 2. coulissent (révèlent)
     tl.set(overlay.current, { autoAlpha: 1, pointerEvents: 'auto' })
@@ -37,6 +40,13 @@ export function PageTransition() {
         slabs,
         { scaleY: 0, transformOrigin: (i) => (i % 2 ? 'bottom' : 'top') },
         { scaleY: 1, duration: 0.26, ease: 'power3.in', stagger: 0.04 },
+      )
+      // rideau HUD : équerres qui convergent
+      .fromTo(
+        brackets,
+        { autoAlpha: 0, scale: 1.5, x: (i) => (i % 2 ? 26 : -26), y: (i) => (i < 2 ? -26 : 26) },
+        { autoAlpha: 1, scale: 1, x: 0, y: 0, duration: 0.22, ease: 'power3.out' },
+        '<0.05',
       )
       .set(flash.current, { autoAlpha: 0.9 })
       .to(flash.current, { autoAlpha: 0, duration: 0.25, ease: 'power2.out' }, '<')
@@ -46,6 +56,7 @@ export function PageTransition() {
         { yPercent: 120, duration: 0.4, ease: 'none' },
         '<',
       )
+      .to(brackets, { autoAlpha: 0, scale: 1.4, duration: 0.2, ease: 'power2.in' }, '<')
       .to(
         slabs,
         {
@@ -86,6 +97,16 @@ export function PageTransition() {
           />
         ))}
       </div>
+
+      {/* équerres HUD (rideau) aux 4 coins */}
+      {[
+        { pos: 'left-6 top-6', b: 'border-l-2 border-t-2' },
+        { pos: 'right-6 top-6', b: 'border-r-2 border-t-2' },
+        { pos: 'left-6 bottom-6', b: 'border-l-2 border-b-2' },
+        { pos: 'right-6 bottom-6', b: 'border-r-2 border-b-2' },
+      ].map((c, i) => (
+        <span key={i} data-bracket className={`invisible absolute h-12 w-12 ${c.pos} ${c.b}`} style={{ borderColor: 'var(--accent)' }} />
+      ))}
 
       {/* flash d'accent au verrouillage */}
       <div

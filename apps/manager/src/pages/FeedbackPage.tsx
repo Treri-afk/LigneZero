@@ -125,6 +125,8 @@ function FeedbackForm({ players, matches, onClose, onSaved }: { players: Player[
     setBusy(true);
     try {
       await db.upsertFeedback({ playerId, matchId: matchId || undefined, body });
+      // Notifie le joueur en DM Discord (livré par le bot ; best-effort).
+      await db.notifyPlayer(playerId, 'feedback', 'Nouveau feedback', body.slice(0, 300));
       onSaved();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erreur');

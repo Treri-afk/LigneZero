@@ -1,5 +1,6 @@
 import { BackdropWord, Bloom, BrandHeader, C, ChamferPanel, ConeHeadline, CornerTicks, DISPLAY, Frame, HazardBand, MONO, unit } from '../primitives';
-import { BRAND, hashtags, lines } from '../caption';
+import { hashtags, lines } from '../caption';
+import { brandName } from '../brand';
 import type { FieldDef, TemplateDef } from '../types';
 
 export interface RecruitmentContent {
@@ -65,14 +66,14 @@ export const recruitmentTemplate: TemplateDef<RecruitmentContent> = {
   Visual: RecruitmentVisual,
   fromData: () => ({
     headline: 'ON RECRUTE',
-    brand: BRAND,
+    brand: brandName(),
     gameTag: 'VALORANT',
     roles: 'Duelliste\nCoach analyste\nCréateur de contenu',
     contact: 'DM ouverts',
   }),
   caption: (c) =>
     lines(
-      `🚨 ${BRAND} RECRUTE — ${c.gameTag}`,
+      `🚨 ${brandName()} RECRUTE — ${c.gameTag}`,
       ``,
       c.roles
         .split('\n')

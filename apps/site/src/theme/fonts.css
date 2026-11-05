@@ -1,9 +1,10 @@
 /**
- * Fonts Google (gratuites). Pour changer la typo, remplace l'import
- * et mets à jour fontFamily dans tailwind.config.ts.
- *   Display : Chakra Petch (alt : Saira Condensed, Michroma, Orbitron)
- *   Data    : JetBrains Mono
- *   Corps   : Inter
+ * Fonts SELF-HOSTÉES via @fontsource (importées dans src/main.tsx, embarquées
+ * dans le build → aucun appel externe, RGPD-clean, fiable même hors-ligne / derrière
+ * proxy). Pour changer la typo : installer le package @fontsource/<font>, importer
+ * les poids voulus dans main.tsx, et mettre à jour fontFamily dans tailwind.config.ts.
+ *   Display : Black Ops One (militaire / tactical — une seule graisse 400 ;
+ *             l'impact vient de la taille + tracking + ombres dures)
+ *   Data    : JetBrains Mono   ·   Corps : Inter
  * (Effet glitch des titres jeux = traitement CSS `.title-glitch`, pas une font.)
  */
-@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
