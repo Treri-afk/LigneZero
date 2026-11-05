@@ -4,11 +4,12 @@ import { useDocTitle } from '@/hooks/useDocTitle';
 import { AdminGuard } from './AdminGuard';
 import { slugify } from './AdminTournamentsPage';
 import { db } from '@/lib/supabase';
-import { applyResult, buildPlayoffShell, generateMatches, seedPlayoffs } from '@/lib/bracket';
+import { uploadImage } from '@/lib/storage';
+import { applyResult, buildPlayoffShell, generateMatches, seedOrder, seedPlayoffs } from '@/lib/bracket';
 import { EditableBracket } from '@/components/tournament/EditableBracket';
 import { EditableGroups } from '@/components/tournament/EditableGroups';
 import { GroupPhaseAdmin } from '@/components/tournament/GroupPhaseAdmin';
-import { composeRound, linkEntries } from '@/lib/lobbies';
+import { composeRound, linkEntries, seedPlayoffsFromLobbies } from '@/lib/lobbies';
 import type { PointRule, Tournament, TournamentFull, TournamentLobby, TournamentMatch, TournamentStatus, TournamentTeam } from '@/types';
 import { RESEED_MODES, TOURNAMENT_FORMATS } from '@/types';
 
@@ -105,15 +106,24 @@ function Inner() {
               {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </L>
-          {t.format === 'groups_bracket' && (
+          {hasLobbyPhase(t.format) && (
             <>
-              <L t="Nombre de poules">
-                <input type="number" min={1} max={8} className={field} value={t.groupCount}
-                  onChange={(e) => set('groupCount', Number(e.target.value) || 1)} />
-              </L>
-              <L t="Qualifiés par poule">
-                <input type="number" min={1} max={4} className={field} value={t.qualifiersPerGroup}
-                  onChange={(e) => set('qualifiersPerGroup', Number(e.target.value) || 1)} />
+              <L t="Équipes qualifiées pour la phase finale">
+                <input
+                  type="number"
+                  min={2}
+                  max={64}
+                  className={field}
+                  value={qualifiedCount(t)}
+                  // Stocké en groupCount × qualifiersPerGroup (colonnes héritées
+                  // des poules 1v1) : on force groupCount à 1 pour que le champ
+                  // affiché soit exactement le nombre de qualifiés.
+                  onChange={(e) => {
+                    const n = Math.max(2, Number(e.target.value) || 2);
+                    set('groupCount', 1);
+                    set('qualifiersPerGroup', n);
+                  }}
+                />
               </L>
               <L t="Format de la phase finale">
                 <select className={field} value={t.playoffFormat}
@@ -122,8 +132,9 @@ function Inner() {
                   <option value="double_elim">Élimination double</option>
                 </select>
               </L>
-              <div className="self-end font-mono text-[10px] text-[color:var(--text-mute)]">
-                → {t.groupCount * t.qualifiersPerGroup} qualifiés en phase finale
+              <div className="sm:col-span-2 font-mono text-[10px] leading-relaxed text-[color:var(--text-mute)]">
+                → arbre de {bracketSize(qualifiedCount(t))} places ·{' '}
+                {Math.ceil(t.teams.length / Math.max(1, t.teamsPerLobby))} lobbies par round
               </div>
             </>
           )}
@@ -219,6 +230,7 @@ function TeamsSection({
         seed: t.teams.length + 1,
         status: 'registered',
         disqualified: false,
+        tiebreakOrder: 0,
         players: [],
       });
       setName('');
@@ -267,8 +279,56 @@ function TeamRow({
           onChange={(e) => run(() => db.upsertTournamentTeam({ ...team, seed: Number(e.target.value) || undefined }))}
           title="Tête de série"
         />
+
+        {/* Logo : aperçu cliquable. Sans logo, la pastille de couleur sert de
+            repli partout (bracket, lobbies, fiches) — d'où le sélecteur à côté. */}
+        <label className="shrink-0 cursor-pointer" title={team.logoUrl ? 'Changer le logo' : 'Ajouter un logo'}>
+          {team.logoUrl ? (
+            <img src={team.logoUrl} alt="" className="h-8 w-8 border border-line-strong object-contain" />
+          ) : (
+            <span
+              className="flex h-8 w-8 items-center justify-center border border-dashed border-line-strong font-mono text-[9px] text-[color:var(--text-mute)]"
+            >
+              +
+            </span>
+          )}
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            disabled={busy}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = '';
+              if (!file) return;
+              run(async () => {
+                const url = await uploadImage(file, 'teams');
+                await db.upsertTournamentTeam({ ...team, logoUrl: url });
+              }, 'Logo mis à jour');
+            }}
+          />
+        </label>
+
+        <input
+          type="color"
+          className="h-8 w-8 shrink-0 cursor-pointer border border-line-strong bg-transparent"
+          value={team.color ?? '#f23127'}
+          onChange={(e) => run(() => db.upsertTournamentTeam({ ...team, color: e.target.value }))}
+          title="Couleur de l'équipe"
+        />
+
         <span className="min-w-0 flex-1 truncate font-mono text-sm">{team.name}</span>
         {team.tag && <span className="font-mono text-[10px] text-[color:var(--text-mute)]">{team.tag}</span>}
+        {team.logoUrl && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => run(() => db.upsertTournamentTeam({ ...team, logoUrl: undefined }), 'Logo retiré')}
+            className="font-mono text-[10px] uppercase text-[color:var(--text-mute)] hover:text-accent"
+          >
+            retirer logo
+          </button>
+        )}
         <button type="button" onClick={() => setOpen(!open)} className="font-mono text-[10px] uppercase tracking-hud text-[color:var(--text-dim)] hover:text-accent">
           {team.players.length} joueur{team.players.length > 1 ? 's' : ''} {open ? '▲' : '▼'}
         </button>
@@ -345,7 +405,7 @@ function BracketSection({
       // Pour un format à lobbies, la phase de groupes est gérée au-dessus :
       // on ne génère ici que l'arbre de playoffs, en 1v1.
       const list = hasLobbyPhase(t.format)
-        ? buildPlayoffShell(t.id, t.groupCount * t.qualifiersPerGroup, t.playoffFormat)
+        ? buildPlayoffShell(t.id, qualifiedCount(t), t.playoffFormat)
         : generateMatches(t.id, t.format, t.teams, {
             groupCount: t.groupCount,
             qualifiersPerGroup: t.qualifiersPerGroup,
@@ -361,7 +421,10 @@ function BracketSection({
 
   const qualify = () =>
     run(async () => {
-      const updated = seedPlayoffs(t.matches, t.teams, t.groupCount, t.qualifiersPerGroup);
+      // Phase à lobbies → classement par points ; poules 1v1 → classement par victoires.
+      const updated = hasLobbyPhase(t.format)
+        ? seedPlayoffsFromLobbies(t.matches, t.teams, t.lobbies, qualifiedCount(t), seedOrder)
+        : seedPlayoffs(t.matches, t.teams, t.groupCount, t.qualifiersPerGroup);
       if (!updated.length) throw new Error('Aucun match de phase finale à remplir.');
       await db.upsertTournamentMatches(updated);
     }, 'Qualifiés placés');
@@ -387,12 +450,15 @@ function BracketSection({
           {t.matches.length ? 'Régénérer' : 'Générer'}
         </button>
 
-        {pools.length > 0 && upper.length > 0 && (
+        {(pools.length > 0 || t.lobbies.length > 0) && upper.length > 0 && (
           <button
             type="button"
             disabled={busy}
             onClick={() => {
-              if (!poolsDone && !confirm('Toutes les poules ne sont pas terminées. Placer quand même les qualifiés ?')) return;
+              const done = hasLobbyPhase(t.format)
+                ? t.lobbies.length > 0 && t.lobbies.every((l) => l.status === 'finished')
+                : poolsDone;
+              if (!done && !confirm('La phase de groupes n\u2019est pas terminée. Placer quand même les qualifiés ?')) return;
               qualify();
             }}
             className={`${btn} border-line-strong`}
@@ -446,6 +512,16 @@ function BracketSection({
       )}
     </Section>
   );
+}
+
+/** Nombre de qualifiés pour la phase finale (produit des deux colonnes). */
+function qualifiedCount(t: Tournament): number {
+  return Math.max(2, t.groupCount * t.qualifiersPerGroup);
+}
+
+/** Taille réelle de l'arbre : puissance de 2 au-dessus du nombre de qualifiés. */
+function bracketSize(n: number): number {
+  return Math.max(2, 2 ** Math.ceil(Math.log2(Math.max(2, n))));
 }
 
 /** Formats dont la phase de groupes se joue en lobbies à N équipes. */
@@ -525,6 +601,14 @@ function LobbySection({
   const deleteRound = (round: number) =>
     run(() => db.deleteTournamentLobbies(t.id, round), `Round ${round} supprimé`);
 
+  /** Arbitrage manuel : ne s'applique qu'en cas d'égalité parfaite. */
+  const arbitrate = (teamId: string, order: number, note: string) =>
+    run(async () => {
+      const team = t.teams.find((x) => x.id === teamId);
+      if (!team) return;
+      await db.upsertTournamentTeam({ ...team, tiebreakOrder: order, tiebreakNote: note || undefined });
+    }, 'Arbitrage enregistré');
+
   const toggleDq = (teamId: string, dq: boolean) =>
     run(async () => {
       const team = t.teams.find((x) => x.id === teamId);
@@ -537,6 +621,8 @@ function LobbySection({
       <GroupPhaseAdmin
         t={t}
         busy={busy}
+        qualified={qualifiedCount(t)}
+        onArbitrate={arbitrate}
         onSaveLobby={saveLobby}
         onGenerateRound={generate}
         onDeleteRound={deleteRound}

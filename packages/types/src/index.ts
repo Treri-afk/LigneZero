@@ -514,6 +514,10 @@ export interface TournamentTeam {
   /** Exclue du tournoi ENTIER (≠ DNF, qui ne vaut que pour un round). */
   disqualified: boolean;
   disqualifiedReason?: string;
+  /** Arbitrage manuel du classement. Plus bas = mieux classé, 0 = aucun. */
+  tiebreakOrder: number;
+  /** Raison de l'arbitrage, affichée publiquement. */
+  tiebreakNote?: string;
   players: TournamentPlayer[];
 }
 

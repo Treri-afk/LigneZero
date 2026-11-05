@@ -52,9 +52,9 @@ export type Database = {
         Relationships: []
       }
       tournament_teams: {
-        Row: { id: string; tournament_id: string; name: string; tag: string | null; logo_url: string | null; color: string | null; seed: number | null; status: string; placement: number | null; disqualified: boolean; disqualified_reason: string | null; created_at: string }
-        Insert: { id?: string; tournament_id: string; name: string; tag?: string | null; logo_url?: string | null; color?: string | null; seed?: number | null; status?: string; placement?: number | null; disqualified?: boolean; disqualified_reason?: string | null; created_at?: string }
-        Update: { id?: string; tournament_id?: string; name?: string; tag?: string | null; logo_url?: string | null; color?: string | null; seed?: number | null; status?: string; placement?: number | null; disqualified?: boolean; disqualified_reason?: string | null; created_at?: string }
+        Row: { id: string; tournament_id: string; name: string; tag: string | null; logo_url: string | null; color: string | null; seed: number | null; status: string; placement: number | null; disqualified: boolean; disqualified_reason: string | null; tiebreak_order: number; tiebreak_note: string | null; created_at: string }
+        Insert: { id?: string; tournament_id: string; name: string; tag?: string | null; logo_url?: string | null; color?: string | null; seed?: number | null; status?: string; placement?: number | null; disqualified?: boolean; disqualified_reason?: string | null; tiebreak_order?: number; tiebreak_note?: string | null; created_at?: string }
+        Update: { id?: string; tournament_id?: string; name?: string; tag?: string | null; logo_url?: string | null; color?: string | null; seed?: number | null; status?: string; placement?: number | null; disqualified?: boolean; disqualified_reason?: string | null; tiebreak_order?: number; tiebreak_note?: string | null; created_at?: string }
         Relationships: []
       }
       tournament_players: {

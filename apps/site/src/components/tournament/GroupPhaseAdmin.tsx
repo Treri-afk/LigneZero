@@ -13,17 +13,22 @@ import { activeTeams, scoreLobby, standings } from '@/lib/lobbies';
 export function GroupPhaseAdmin({
   t,
   busy,
+  qualified,
   onSaveLobby,
   onGenerateRound,
   onDeleteRound,
   onToggleDq,
+  onArbitrate,
 }: {
   t: TournamentFull;
   busy: boolean;
+  /** Nombre de places qualificatives — trace la ligne de coupure. */
+  qualified: number;
   onSaveLobby: (lobby: TournamentLobby) => void;
   onGenerateRound: (round: number) => void;
   onDeleteRound: (round: number) => void;
   onToggleDq: (teamId: string, dq: boolean) => void;
+  onArbitrate: (teamId: string, order: number, note: string) => void;
 }) {
   const rounds = [...new Set(t.lobbies.map((l) => l.round))].sort((a, b) => a - b);
   const lastRound = rounds.length ? rounds[rounds.length - 1] : 0;
@@ -55,6 +60,12 @@ export function GroupPhaseAdmin({
       {table.some((r) => r.played > 0) && (
         <div className="mt-6">
           <p className="hud-label mb-3 text-[11px]">[ Classement cumulé ]</p>
+          {table.some((r) => r.tied) && (
+            <p className="mb-3 border-2 border-accent px-3 py-2 font-mono text-[11px] text-accent">
+              ⚠ Égalité non tranchée automatiquement — les équipes marquées « = » sont
+              départagées par ton arbitrage, ou à défaut par l'ordre de saisie.
+            </p>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full min-w-[520px] border-2 border-line-strong">
               <thead>
@@ -63,35 +74,78 @@ export function GroupPhaseAdmin({
                   <th className="px-3 py-2 text-left">Équipe</th>
                   <th className="px-2 py-2 text-right">Pts</th>
                   <th className="px-2 py-2 text-right">J</th>
+                  <th className="px-2 py-2 text-right" title="Meilleur placement obtenu">Best</th>
                   <th className="px-2 py-2 text-right">1ers</th>
+                  <th className="px-2 py-2 text-right" title="Placement au dernier round joué">Dern.</th>
                   <th className="px-2 py-2 text-right">DNF</th>
+                  <th className="px-2 py-2 text-right">Arbitrage</th>
                   <th className="px-2 py-2 text-right">DQ</th>
                 </tr>
               </thead>
               <tbody>
-                {table.map((r, i) => (
-                  <tr key={r.team.id} className="border-t border-line-strong">
-                    <td className="px-3 py-2 font-display text-sm font-bold" style={{ color: i === 0 ? 'var(--accent)' : 'inherit' }}>{i + 1}</td>
-                    <td className="px-3 py-2 font-mono text-xs">{r.team.name}</td>
-                    <td className="px-2 py-2 text-right font-display text-base font-bold text-accent">{r.points}</td>
-                    <td className="px-2 py-2 text-right font-mono text-xs text-[color:var(--text-dim)]">{r.played}</td>
-                    <td className="px-2 py-2 text-right font-mono text-xs">{r.wins}</td>
-                    <td className="px-2 py-2 text-right font-mono text-xs text-[color:var(--text-mute)]">{r.dnf || ''}</td>
-                    <td className="px-2 py-2 text-right">
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => {
-                          if (confirm(`Disqualifier ${r.team.name} du tournoi entier ?`)) onToggleDq(r.team.id, true);
-                        }}
-                        className="font-mono text-[10px] uppercase text-accent"
-                        title="Exclure du tournoi entier"
-                      >
-                        exclure
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {table.map((r, i) => {
+                  // Trait rouge sous la dernière place qualificative.
+                  const cut = qualified > 0 && i + 1 === qualified && table.length > qualified;
+                  return (
+                    <tr
+                      key={r.team.id}
+                      className="border-t border-line-strong"
+                      style={cut ? { borderBottom: '2px solid var(--accent)' } : undefined}
+                    >
+                      <td className="px-3 py-2 font-display text-sm font-bold" style={{ color: i === 0 ? 'var(--accent)' : 'inherit' }}>{i + 1}</td>
+                      <td className="px-3 py-2 font-mono text-xs">
+                        {r.team.name}
+                        {r.tied && <span className="ml-2 text-accent" title="Égalité non tranchée automatiquement">=</span>}
+                        {r.team.tiebreakNote && (
+                          <span className="ml-2 text-[10px] text-[color:var(--text-mute)]" title={r.team.tiebreakNote}>⚖</span>
+                        )}
+                      </td>
+                      <td className="px-2 py-2 text-right font-display text-base font-bold text-accent">{r.points}</td>
+                      <td className="px-2 py-2 text-right font-mono text-xs text-[color:var(--text-dim)]">{r.played}</td>
+                      <td className="px-2 py-2 text-right font-mono text-xs">{r.best === 99 ? '' : r.best}</td>
+                      <td className="px-2 py-2 text-right font-mono text-xs">{r.wins}</td>
+                      <td className="px-2 py-2 text-right font-mono text-xs text-[color:var(--text-dim)]">{r.lastPlacement === 99 ? '' : r.lastPlacement}</td>
+                      <td className="px-2 py-2 text-right font-mono text-xs text-[color:var(--text-mute)]">{r.dnf || ''}</td>
+                      <td className="px-2 py-2 text-right">
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => {
+                            const cur = r.team.tiebreakOrder ?? 0;
+                            const raw = prompt(
+                              `Arbitrage pour ${r.team.name}\n\n`
+                                + `Valeur plus BASSE = mieux classé (0 = aucun arbitrage).\n`
+                                + `Ne s'applique qu'en cas d'égalité parfaite.`,
+                              String(cur),
+                            );
+                            if (raw == null) return;
+                            const order = Number(raw) || 0;
+                            const note = order === 0 ? '' : (prompt('Raison (affichée publiquement) :', r.team.tiebreakNote ?? '') ?? '');
+                            onArbitrate(r.team.id, order, note);
+                          }}
+                          className="font-mono text-[10px] uppercase"
+                          style={{ color: (r.team.tiebreakOrder ?? 0) !== 0 ? 'var(--accent)' : 'var(--text-mute)' }}
+                          title={r.team.tiebreakNote ?? 'Départager manuellement'}
+                        >
+                          {(r.team.tiebreakOrder ?? 0) !== 0 ? `± ${r.team.tiebreakOrder}` : 'régler'}
+                        </button>
+                      </td>
+                      <td className="px-2 py-2 text-right">
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => {
+                            if (confirm(`Disqualifier ${r.team.name} du tournoi entier ?`)) onToggleDq(r.team.id, true);
+                          }}
+                          className="font-mono text-[10px] uppercase text-accent"
+                          title="Exclure du tournoi entier"
+                        >
+                          exclure
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -736,6 +736,8 @@ export function fromTournamentTeamRow(r: Tables<'tournament_teams'>): Tournament
     placement: u(r.placement),
     disqualified: r.disqualified,
     disqualifiedReason: u(r.disqualified_reason),
+    tiebreakOrder: r.tiebreak_order,
+    tiebreakNote: u(r.tiebreak_note),
     players: [],
   };
 }
@@ -752,6 +754,8 @@ export function toTournamentTeamRow(t: TournamentTeam): TablesInsert<'tournament
     placement: t.placement ?? null,
     disqualified: t.disqualified,
     disqualified_reason: t.disqualifiedReason ?? null,
+    tiebreak_order: t.tiebreakOrder,
+    tiebreak_note: t.tiebreakNote ?? null,
   };
 }
 

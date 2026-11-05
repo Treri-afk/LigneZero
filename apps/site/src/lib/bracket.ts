@@ -225,6 +225,7 @@ export function buildGroupsAndPlayoffs(
     seed: i + 1,
     status: 'registered',
     disqualified: false,
+    tiebreakOrder: 0,
     players: [],
   }));
 
@@ -317,6 +318,7 @@ export function buildPlayoffShell(
     seed: i + 1,
     status: 'registered',
     disqualified: false,
+    tiebreakOrder: 0,
     players: [],
   }));
   const list =

@@ -26,11 +26,82 @@ export interface Standing {
   team: TournamentTeam;
   points: number;
   played: number;
-  /** Nombre de premières places — sert à départager. */
+  /** Nombre de premières places. */
   wins: number;
   dnf: number;
   /** Placements round par round, pour la recomposition par classement. */
   placements: number[];
+  /** Meilleur placement obtenu (1 = a gagné un lobby). */
+  best: number;
+  /** Combien de fois 1er, 2e, 3e… — index 0 = 1re place. */
+  counts: number[];
+  /** Placement au round le plus récent joué. */
+  lastRound: number;
+  lastPlacement: number;
+  /**
+   * Vrai si la chaîne AUTOMATIQUE (critères 1 à 5) n'a pas pu séparer cette
+   * équipe de sa voisine au classement. Un arbitrage manuel est alors requis.
+   */
+  tied: boolean;
+  /** Rang final, 1-indexé. */
+  rank: number;
+}
+
+/** Placements d'une équipe dans un lobby partagé avec une autre, s'il existe. */
+function headToHead(a: string, b: string, lobbies: TournamentLobby[]): number {
+  // On ne regarde que le lobby COMMUN le plus récent : c'est la confrontation
+  // directe la plus pertinente, et la seule qui ait valeur d'arbitrage.
+  const shared = lobbies
+    .filter((l) => l.entries.some((e) => e.teamId === a) && l.entries.some((e) => e.teamId === b))
+    .sort((x, y) => y.round - x.round)[0];
+  if (!shared) return 0;
+  const pa = shared.entries.find((e) => e.teamId === a)?.placement;
+  const pb = shared.entries.find((e) => e.teamId === b)?.placement;
+  if (pa == null || pb == null) return 0;
+  return pa - pb;
+}
+
+/**
+ * Chaîne de départage, dans l'ordre :
+ *   1. points cumulés
+ *   2. meilleur placement unique (gagner un lobby vaut mieux que la régularité)
+ *   3. nombre de 1res places, puis de 2es, puis de 3es…
+ *   4. performance au dernier round joué (la forme récente)
+ *   5. confrontation directe, si les deux équipes se sont croisées
+ *   6. arbitrage manuel de l'organisateur
+ * Renvoie <0 si `a` passe devant `b`.
+ */
+function compare(a: Standing, b: Standing, lobbies: TournamentLobby[]): number {
+  if (b.points !== a.points) return b.points - a.points;
+  if (a.best !== b.best) return a.best - b.best;
+
+  const depth = Math.max(a.counts.length, b.counts.length);
+  for (let i = 0; i < depth; i++) {
+    const ca = a.counts[i] ?? 0;
+    const cb = b.counts[i] ?? 0;
+    if (ca !== cb) return cb - ca;
+  }
+
+  if (a.lastRound === b.lastRound && a.lastPlacement !== b.lastPlacement) {
+    return a.lastPlacement - b.lastPlacement;
+  }
+
+  const h2h = headToHead(a.team.id, b.team.id, lobbies);
+  if (h2h !== 0) return h2h;
+
+  return (a.team.tiebreakOrder ?? 0) - (b.team.tiebreakOrder ?? 0);
+}
+
+/** Les cinq premiers critères séparent-ils ces deux équipes ? */
+function separatedAutomatically(a: Standing, b: Standing, lobbies: TournamentLobby[]): boolean {
+  if (a.points !== b.points) return true;
+  if (a.best !== b.best) return true;
+  const depth = Math.max(a.counts.length, b.counts.length);
+  for (let i = 0; i < depth; i++) {
+    if ((a.counts[i] ?? 0) !== (b.counts[i] ?? 0)) return true;
+  }
+  if (a.lastRound === b.lastRound && a.lastPlacement !== b.lastPlacement) return true;
+  return headToHead(a.team.id, b.team.id, lobbies) !== 0;
 }
 
 /**
@@ -45,7 +116,10 @@ export function standings(
 ): Standing[] {
   const rows = new Map<string, Standing>();
   for (const t of teams) {
-    rows.set(t.id, { team: t, points: 0, played: 0, wins: 0, dnf: 0, placements: [] });
+    rows.set(t.id, {
+      team: t, points: 0, played: 0, wins: 0, dnf: 0, placements: [],
+      best: 99, counts: [], lastRound: 0, lastPlacement: 99, tied: false, rank: 0,
+    });
   }
 
   for (const lob of lobbies) {
@@ -57,18 +131,32 @@ export function standings(
       r.played += 1;
       r.points += e.points;
       if (e.dnf) r.dnf += 1;
-      if (e.placement === 1) r.wins += 1;
-      if (e.placement != null) r.placements.push(e.placement);
+      if (e.placement != null) {
+        r.placements.push(e.placement);
+        r.best = Math.min(r.best, e.placement);
+        r.counts[e.placement - 1] = (r.counts[e.placement - 1] ?? 0) + 1;
+        if (e.placement === 1) r.wins += 1;
+        if (lob.round >= r.lastRound) {
+          r.lastRound = lob.round;
+          r.lastPlacement = e.placement;
+        }
+      }
     }
   }
 
-  // Points, puis nombre de victoires, puis meilleur placement moyen.
-  return [...rows.values()].sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    if (b.wins !== a.wins) return b.wins - a.wins;
-    const avg = (x: Standing) => (x.placements.length ? x.placements.reduce((s, p) => s + p, 0) / x.placements.length : 99);
-    return avg(a) - avg(b);
+  const list = [...rows.values()].sort((a, b) => compare(a, b, lobbies));
+
+  // Signale les égalités que l'automatique n'a pas tranchées.
+  list.forEach((r, i) => {
+    r.rank = i + 1;
+    const prev = list[i - 1];
+    const next = list[i + 1];
+    r.tied =
+      (!!prev && !separatedAutomatically(prev, r, lobbies)) ||
+      (!!next && !separatedAutomatically(r, next, lobbies));
   });
+
+  return list;
 }
 
 /* ── Composition des lobbies ─────────────────────────────────────── */
@@ -201,5 +289,38 @@ export function scoreLobby(entries: LobbyEntry[], rules: PointRule[]): LobbyEntr
   return entries.map((e) => ({
     ...e,
     points: e.dnf || e.placement == null ? 0 : pointsFor(rules, e.placement),
+  }));
+}
+
+/**
+ * Place les qualifiés de la PHASE DE GROUPES À LOBBIES dans l'arbre final.
+ *
+ * Distinct de `seedPlayoffs` (bracket.ts), qui lit des poules en 1v1 : ici
+ * le classement vient des lobbies, donc des points au placement.
+ * Renvoie les matchs du premier tour mis à jour.
+ */
+export function seedPlayoffsFromLobbies<M extends { bracket?: string; round: number; position: number; teamAId?: string; teamBId?: string }>(
+  matches: M[],
+  teams: TournamentTeam[],
+  lobbies: TournamentLobby[],
+  qualified: number,
+  seedOrder: (size: number) => number[],
+): M[] {
+  const ranked = standings(activeTeams(teams), lobbies)
+    .slice(0, qualified)
+    .map((r) => r.team);
+  if (ranked.length < 2) return [];
+
+  const first = matches
+    .filter((m) => m.bracket === 'winner' && m.round === 1)
+    .sort((a, b) => a.position - b.position);
+  if (!first.length) return [];
+
+  // Même appariement que l'arbre : 1 contre le dernier, 2 contre l'avant-dernier…
+  const order = seedOrder(first.length * 2);
+  return first.map((m, i) => ({
+    ...m,
+    teamAId: ranked[order[i * 2] - 1]?.id,
+    teamBId: ranked[order[i * 2 + 1] - 1]?.id,
   }));
 }

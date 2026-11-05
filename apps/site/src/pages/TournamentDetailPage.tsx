@@ -5,6 +5,10 @@ import { PageBackdrop } from '@/components/animation/PageBackdrop';
 import { Bracket as HudBracket } from '@/components/ui/Bracket';
 import { Bracket } from '@/components/tournament/Bracket';
 import { Standings } from '@/components/tournament/Standings';
+import { GroupPhase } from '@/components/tournament/GroupPhase';
+import { UpNext } from '@/components/tournament/UpNext';
+import { KeycapButton } from '@/components/ui/KeycapButton';
+import { DISCORD_URL } from '@/data/socials';
 import { db } from '@/lib/supabase';
 import { formatDate } from '@/lib/format';
 import type { TournamentFull } from '@/types';
@@ -60,6 +64,10 @@ export default function TournamentDetailPage() {
   const poolNames = [...new Set(pools.map((m) => m.groupLabel!))].sort();
   const isElim = t.format === 'single_elim' || t.format === 'double_elim' || t.format === 'groups_bracket';
   const champion = t.teams.find((x) => x.status === 'winner' || x.placement === 1);
+  const qualifiedCount = Math.max(0, t.groupCount * t.qualifiersPerGroup);
+  // Arbre généré mais encore vide de participants.
+  const playoffsPending =
+    upper.length > 0 && upper.every((m) => !m.teamAId && !m.teamBId);
 
   return (
     <div className="relative">
@@ -82,12 +90,36 @@ export default function TournamentDetailPage() {
           }
         />
 
+        {/* Inscription : elle se fait sur Discord, pas sur le site.
+            Masqué une fois le tournoi terminé — s'inscrire n'aurait plus de
+            sens, et le bandeau écraserait l'annonce du vainqueur. */}
+        {t.status !== 'finished' && (
+          <div className="mt-8 flex flex-col items-start justify-between gap-5 border-2 border-line-strong panel-concrete p-6 shadow-ink sm:flex-row sm:items-center">
+            <div>
+              <p className="hud-label mb-2 text-[10px]">[ Inscription ]</p>
+              <p className="hud-title text-2xl font-bold leading-none">Rejoins le Discord pour t'inscrire</p>
+              <p className="mt-2 font-mono text-xs text-[color:var(--text-dim)]">
+                &gt; les inscriptions passent par le serveur — équipe de {t.teamSize}
+                {t.maxTeams ? ` · ${t.teams.length}/${t.maxTeams} équipes` : ''}
+              </p>
+            </div>
+            <KeycapButton href={DISCORD_URL} size="lg">Rejoindre &gt;</KeycapButton>
+          </div>
+        )}
+
         {champion && (
           <div className="mt-8 flex items-center gap-4 border-2 border-accent bg-base-900/60 p-4 shadow-ink">
             <span className="font-mono text-[10px] uppercase tracking-hud text-accent">Vainqueur</span>
             <span className="hud-title text-2xl font-bold">{champion.name}</span>
           </div>
         )}
+
+        {/* Ce qui se joue maintenant ou bientôt — en haut, car c'est
+            l'information la plus demandée pendant un tournoi. */}
+        <UpNext t={t} />
+
+        {/* Phase de groupes en lobbies (format The Finals). */}
+        <GroupPhase t={t} qualified={qualifiedCount} />
 
         {/* ── Arbres ── */}
         {isElim && (upper.length > 0 || lower.length > 0 || grand.length > 0) && (
@@ -99,6 +131,14 @@ export default function TournamentDetailPage() {
             />
             {lower.length > 0 && <Bracket matches={lower} teams={t.teams} title="[ Lower bracket ]" />}
             {grand.length > 0 && <Bracket matches={grand} teams={t.teams} title="[ Grande finale ]" />}
+
+            {/* Un arbre généré mais sans équipes n'est pas une erreur :
+                il attend la fin de la phase de groupes. On le dit. */}
+            {playoffsPending && (
+              <p className="border-2 border-dashed border-line-strong px-4 py-4 text-center font-mono text-[11px] text-[color:var(--text-mute)]">
+                &gt; la phase finale se remplira à l'issue des phases de groupes
+              </p>
+            )}
           </section>
         )}
 
