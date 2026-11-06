@@ -51,6 +51,23 @@ function loadTwitchApi(): Promise<void> {
   return twitchApiPromise;
 }
 
+/** Traduit un code d'erreur du lecteur YouTube en message actionnable pour le staff. */
+function youtubeErrorMessage(code: number): string {
+  switch (code) {
+    case 101:
+    case 150:
+      return "Le propriétaire de cette vidéo a désactivé la lecture intégrée. Elle ne peut pas être jouée ici — utilise une vidéo dont l'embed est autorisé (ou ré-héberge la VOD).";
+    case 100:
+      return 'Vidéo introuvable : elle est privée, supprimée, ou le lien est incorrect.';
+    case 2:
+      return "Lien YouTube invalide — vérifie l'URL de la vidéo.";
+    case 5:
+      return 'Erreur du lecteur HTML5 — réessaie ou utilise un autre navigateur.';
+    default:
+      return 'Cette vidéo ne peut pas être lue en intégré.';
+  }
+}
+
 /**
  * Lecteur VOD avec seek programmatique — YouTube et Twitch (VOD) via leurs API
  * d'embed respectives. Pour tout autre lien : repli en simple bouton d'ouverture
@@ -64,6 +81,7 @@ export const VideoEmbed = forwardRef<VideoEmbedHandle, VideoEmbedProps>(function
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const playerRef = useRef<any>(null);
   const [ready, setReady] = useState(false);
+  const [embedError, setEmbedError] = useState<string | null>(null);
   const parsed = parseVideoUrl(url);
 
   useImperativeHandle(ref, () => ({
@@ -85,6 +103,7 @@ export const VideoEmbed = forwardRef<VideoEmbedHandle, VideoEmbedProps>(function
   useEffect(() => {
     let cancelled = false;
     setReady(false);
+    setEmbedError(null);
     playerRef.current = null;
 
     if (parsed.platform === 'youtube' && parsed.id) {
@@ -92,11 +111,19 @@ export const VideoEmbed = forwardRef<VideoEmbedHandle, VideoEmbedProps>(function
         if (cancelled) return;
         playerRef.current = new window.YT!.Player(containerId, {
           videoId: parsed.id,
+          // origin explicite : évite les blocages d'embed en localhost / referrer absent
+          playerVars: { origin: window.location.origin, rel: 0 },
           events: {
             onReady: () => {
               if (cancelled) return;
               setReady(true);
               onReady?.();
+            },
+            // codes YouTube : 2 = ID invalide, 5 = erreur lecteur, 100 = introuvable
+            // (privée/supprimée), 101 & 150 = lecture intégrée désactivée par le propriétaire
+            onError: (e: { data: number }) => {
+              if (cancelled) return;
+              setEmbedError(youtubeErrorMessage(e.data));
             },
           },
         });
@@ -139,9 +166,18 @@ export const VideoEmbed = forwardRef<VideoEmbedHandle, VideoEmbedProps>(function
 
   return (
     <div className="relative aspect-video w-full border border-line-strong bg-base-900">
-      {!ready && (
+      {!ready && !embedError && (
         <div className="absolute inset-0 flex items-center justify-center font-mono text-xs text-[color:var(--text-mute)]">
           Chargement du lecteur…
+        </div>
+      )}
+      {embedError && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-base-900 p-6 text-center">
+          <p className="font-mono text-xs uppercase tracking-hud text-accent">Lecture intégrée impossible</p>
+          <p className="max-w-md font-mono text-xs leading-relaxed text-[color:var(--text-mute)]">{embedError}</p>
+          <a href={url} target="_blank" rel="noopener noreferrer" className="font-mono text-xs text-accent hover:underline">
+            ↗ Ouvrir sur YouTube
+          </a>
         </div>
       )}
       <div id={containerId} className="h-full w-full" />

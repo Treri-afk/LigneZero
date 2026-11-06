@@ -1,10 +1,8 @@
 import { Link } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useDocTitle } from '@/hooks/useDocTitle';
 
 export default function NotFound() {
-  useEffect(() => {
-    document.title = '__BRAND__ // 404';
-  }, []);
+  useDocTitle('404');
 
   return (
     <section className="mx-auto flex min-h-[60vh] max-w-7xl flex-col justify-center px-4 py-24 sm:px-6">

@@ -7,7 +7,8 @@ apps reliées par une seule DB Supabase.
 ```
 LigneZero/
   apps/
-    site/        vitrine + hub communautaire (React/Vite/R3F/GSAP) — LIT les données
+    web/         NOUVELLE vitrine, repart de zéro (3 pages, DA en cours de choix)
+    site/        ancienne vitrine + hub communautaire (R3F/GSAP) — archive
     manager/     webapp de gestion (CRUD authentifié staff) — ÉCRIT les données
   packages/
     types/       @lignezero/types — interfaces domaine (camelCase), source unique
@@ -23,8 +24,14 @@ Schéma = miroir de `packages/types` ; snake_case en DB, mapping camelCase dans
 `packages/supabase/src/mappers.ts`. Régénérer les types DB après migration :
 `npx supabase gen types typescript --project-id hwhpxmrfwqgzhhrjfurd > packages/supabase/src/database.types.ts`.
 
-Scripts racine : `npm run dev:site`, `npm run dev:manager`, `npm run build:site`,
-`npm run build:manager`.
+Scripts racine : `npm run dev:web`, `npm run dev:site`, `npm run dev:manager`,
+`npm run build:web`, `npm run build:site`, `npm run build:manager`.
+
+**Chantier en cours (26/10/2026)** : `apps/site` et `apps/manager` sont jugés
+trop complexes pour l'objectif (promouvoir la structure). On repart sur
+`apps/web` : 3 pages, plus clair et plus carré. Voir
+[apps/web/README.md](apps/web/README.md) pour le choix de direction artistique
+en cours, et [.impeccable.md](.impeccable.md) pour le contexte design.
 
 Tout ce qui suit décrit **apps/site** (le vitrine). Les chemins `src/...` sont
 relatifs à `apps/site/`.

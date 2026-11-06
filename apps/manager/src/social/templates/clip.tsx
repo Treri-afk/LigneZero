@@ -1,6 +1,7 @@
 import type { Clip } from '@lignezero/types';
 import { BackdropWord, Bloom, BrandHeader, C, CornerTicks, DISPLAY, Frame, MONO, Photo, TitleBlock, unit } from '../primitives';
-import { BRAND, hashtags, lines } from '../caption';
+import { hashtags, lines } from '../caption';
+import { brandName } from '../brand';
 import type { FieldDef, StudioData, TemplateDef } from '../types';
 
 export interface ClipContent {
@@ -81,7 +82,7 @@ export const clipTemplate: TemplateDef<ClipContent> = {
     if (!clip) return null;
     return {
       headline: 'CLIP',
-      brand: BRAND,
+      brand: brandName(),
       title: clip.title,
       author: clip.author,
       game: clip.game ?? '—',

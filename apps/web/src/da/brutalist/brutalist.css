@@ -1,0 +1,791 @@
+/* ============================================================
+   DA 02 — BÉTON BRUTALIST ROUGE
+   L'ADN maison, dégraissé : charbon chaud + béton clair, un seul
+   rouge signal, ombres dures sans flou, labels monospace. Contraste
+   clair/sombre franc d'une section à l'autre, grille stricte.
+   ============================================================ */
+
+.br {
+  --coal: #141210;
+  --coal-2: #1c1917;
+  --coal-3: #262220;
+  --concrete: #d8d3c7;
+  --paper: #efece4;
+  --bone: #e9e3d6;
+  --bone-dim: rgba(233, 227, 214, 0.58);
+  --red: #f23127;
+  --hair-dark: rgba(233, 227, 214, 0.14);
+  --hair-light: rgba(20, 18, 16, 0.16);
+
+  --gutter: clamp(1.25rem, 4vw, 4.5rem);
+  --section: clamp(4.5rem, 9vw, 9rem);
+
+  position: relative;
+  padding-bottom: 6rem;
+  font-family: 'Instrument Sans Variable', 'Instrument Sans', system-ui, sans-serif;
+  font-size: clamp(0.95rem, 0.3vw + 0.88rem, 1.05rem);
+  line-height: 1.6;
+  color: var(--bone);
+  background: var(--coal);
+  overflow-x: clip;
+}
+
+.br__grain {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.br h1,
+.br h2,
+.br h3,
+.br .br-display {
+  font-family: 'Black Ops One', Impact, sans-serif;
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+}
+
+.br-label {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.br__wrap {
+  width: 100%;
+  max-width: 92rem;
+  padding-inline: var(--gutter);
+  margin-inline: auto;
+}
+
+/* alternance franc clair / sombre */
+.br__light {
+  color: var(--coal);
+  background: var(--paper);
+}
+
+.br__light .br-label {
+  color: rgba(20, 18, 16, 0.55);
+}
+
+/* texture béton : grille fine + marbrure, sans bruit visuel */
+.br__concrete {
+  background-color: var(--concrete);
+  background-image:
+    linear-gradient(var(--hair-light) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hair-light) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* bande de danger — un seul emploi par page */
+.br__hazard {
+  height: 10px;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--red) 0 14px,
+    var(--coal) 14px 28px
+  );
+}
+
+/* ---------- navigation ---------- */
+.br__nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--coal);
+  border-bottom: 1px solid var(--hair-dark);
+}
+
+.br__nav-in {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 1rem;
+}
+
+.br__word {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: 'Black Ops One', Impact, sans-serif;
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+}
+
+.br__word i {
+  width: 11px;
+  height: 11px;
+  background: var(--red);
+}
+
+.br__links {
+  display: flex;
+  gap: clamp(1rem, 2.5vw, 2.5rem);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.br__links a {
+  transition: color 160ms linear;
+}
+
+.br__links a:hover {
+  color: var(--red);
+}
+
+/* ---------- keycap : le bouton maison, ombre dure ---------- */
+.br-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.35rem;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: var(--coal);
+  background: var(--bone);
+  box-shadow: 5px 5px 0 0 var(--red);
+  transition:
+    transform 90ms linear,
+    box-shadow 90ms linear;
+}
+
+.br-key:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 3px 3px 0 0 var(--red);
+}
+
+.br-key:active {
+  transform: translate(5px, 5px);
+  box-shadow: 0 0 0 0 var(--red);
+}
+
+.br-key--red {
+  color: var(--bone);
+  background: var(--red);
+  box-shadow: 5px 5px 0 0 var(--coal);
+}
+
+.br-key--red:hover,
+.br-key--red:active {
+  box-shadow: 3px 3px 0 0 var(--coal);
+}
+
+.br-key--outline {
+  color: var(--bone);
+  background: transparent;
+  border: 1px solid var(--bone);
+  box-shadow: 5px 5px 0 0 var(--hair-dark);
+}
+
+/* ---------- hero ---------- */
+.br__hero {
+  position: relative;
+  padding-top: clamp(2.5rem, 5vw, 5rem);
+}
+
+.br__hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.82fr);
+  gap: clamp(1.5rem, 3vw, 3.5rem);
+  align-items: end;
+}
+
+.br__hero h1 {
+  font-size: clamp(3rem, 9.5vw, 9.5rem);
+  letter-spacing: -0.005em;
+}
+
+.br__hero h1 span {
+  display: block;
+}
+
+.br__hero h1 em {
+  font-style: normal;
+  color: var(--red);
+}
+
+.br__hero-lede {
+  max-width: 36ch;
+  margin-top: clamp(1.25rem, 2.5vw, 2rem);
+  color: var(--bone-dim);
+}
+
+.br__hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: clamp(1.75rem, 3vw, 2.75rem);
+}
+
+/* fiche HUD du prochain match, posée dans le hero */
+.br__ticket {
+  padding: 1.35rem;
+  color: var(--coal);
+  background: var(--bone);
+  box-shadow: 7px 7px 0 0 var(--coal-3);
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+}
+
+.br__ticket-top {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 0.9rem;
+  border-bottom: 2px solid var(--coal);
+}
+
+.br__ticket-top span {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.br__ticket-body {
+  display: grid;
+  gap: 0.4rem;
+  padding-block: 1.1rem;
+}
+
+.br__ticket-body strong {
+  font-family: 'Black Ops One', Impact, sans-serif;
+  font-size: clamp(1.4rem, 2.4vw, 2rem);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.br__ticket-body span {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(20, 18, 16, 0.6);
+}
+
+.br__ticket-date {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding-top: 0.9rem;
+  border-top: 1px dashed rgba(20, 18, 16, 0.3);
+}
+
+.br__ticket-date b {
+  font-family: 'Black Ops One', Impact, sans-serif;
+  font-size: 2.6rem;
+  line-height: 0.85;
+  color: var(--red);
+}
+
+.br__hero-tape {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 2rem;
+  margin-top: var(--section);
+  padding-block: 0.9rem;
+  color: var(--bone-dim);
+  border-top: 1px solid var(--hair-dark);
+  border-bottom: 1px solid var(--hair-dark);
+}
+
+/* ---------- titres de section ---------- */
+.br__section {
+  padding-block: var(--section);
+}
+
+.br__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 2rem;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: clamp(1.75rem, 3vw, 2.75rem);
+}
+
+.br__head h2 {
+  font-size: clamp(1.9rem, 4.4vw, 3.6rem);
+}
+
+.br__head p {
+  max-width: 40ch;
+  color: rgba(20, 18, 16, 0.62);
+}
+
+.br__section:not(.br__light) .br__head p {
+  color: var(--bone-dim);
+}
+
+/* ---------- roster : barres dépliables ----------
+   Empilement de rails : une seule barre s'ouvre à la fois, les autres
+   restent en veille comme des interrupteurs. Rotation automatique jusqu'à
+   la première interaction. */
+.br__stack {
+  display: grid;
+  gap: 0.75rem;
+  transition: grid-template-rows 420ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.br-row {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+  min-height: 0;
+  background: var(--paper);
+  border: 2px solid var(--coal);
+  box-shadow: 6px 6px 0 0 var(--coal);
+  transition: box-shadow 140ms linear;
+}
+
+.br-row[data-active='true'] {
+  box-shadow: 9px 9px 0 0 var(--red);
+}
+
+.br-row__bar {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr) auto 2.5rem;
+  gap: 1rem;
+  align-items: center;
+  width: 100%;
+  height: 4.6rem;
+  padding-inline: 1rem;
+  text-align: left;
+  color: var(--coal);
+  border-bottom: 2px solid transparent;
+  transition: background 140ms linear, border-color 140ms linear;
+}
+
+.br-row[data-active='true'] .br-row__bar {
+  border-bottom-color: var(--coal);
+}
+
+.br-row__bar:hover {
+  background: rgba(242, 49, 39, 0.08);
+}
+
+.br-row__num {
+  font-family: 'Black Ops One', Impact, sans-serif;
+  font-size: 1.9rem;
+  line-height: 1;
+  color: var(--red);
+}
+
+.br-row__name {
+  font-family: 'Black Ops One', Impact, sans-serif;
+  font-size: clamp(1.3rem, 2.4vw, 2rem);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.br-row__build {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(20, 18, 16, 0.55);
+}
+
+/* chevron en pur CSS : deux traits, rotation à l'ouverture */
+.br-row__chevron {
+  position: relative;
+  justify-self: end;
+  width: 14px;
+  height: 14px;
+  background:
+    linear-gradient(var(--coal), var(--coal)) center / 100% 2px no-repeat,
+    linear-gradient(var(--coal), var(--coal)) center / 2px 100% no-repeat;
+  transition: transform 420ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.br-row[data-active='true'] .br-row__chevron {
+  transform: rotate(45deg);
+}
+
+.br-row__body {
+  display: grid;
+  grid-template-columns: 11rem minmax(0, 1fr);
+  gap: clamp(1rem, 2.5vw, 2rem);
+  min-height: 0;
+  padding: 1rem;
+  opacity: 0;
+  transition: opacity 320ms linear;
+}
+
+.br-row[data-active='true'] .br-row__body {
+  opacity: 1;
+  transition-delay: 120ms;
+}
+
+.br-row__ph {
+  position: relative;
+  display: grid;
+  place-items: center;
+  background-color: var(--concrete);
+  background-image: radial-gradient(rgba(20, 18, 16, 0.22) 1px, transparent 1px);
+  background-size: 6px 6px;
+  border: 1px dashed rgba(20, 18, 16, 0.3);
+}
+
+.br-row__ph .br-label {
+  position: absolute;
+  bottom: 0.6rem;
+  color: rgba(20, 18, 16, 0.5);
+}
+
+.br-row__cross {
+  width: 40px;
+  height: 40px;
+  background:
+    linear-gradient(var(--coal), var(--coal)) center / 1px 100% no-repeat,
+    linear-gradient(var(--coal), var(--coal)) center / 100% 1px no-repeat;
+  opacity: 0.4;
+}
+
+.br-row__specs {
+  display: grid;
+  align-content: start;
+  border-top: 2px solid var(--coal);
+}
+
+.br-row__specs > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 0.6rem;
+  border-bottom: 1px solid var(--hair-light);
+}
+
+.br-row__specs dt {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(20, 18, 16, 0.55);
+}
+
+.br-row__specs dd {
+  margin: 0;
+  font-family: 'Black Ops One', Impact, sans-serif;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  color: var(--coal);
+}
+
+/* ---------- jauges chiffrées ---------- */
+.br__figures {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--hair-dark);
+  border: 1px solid var(--hair-dark);
+}
+
+.br__figure {
+  padding: clamp(1.25rem, 2.5vw, 2rem);
+  background: var(--coal-2);
+}
+
+.br__figure b {
+  display: block;
+  font-family: 'Black Ops One', Impact, sans-serif;
+  font-size: clamp(2.6rem, 5.5vw, 4.25rem);
+  line-height: 0.9;
+}
+
+.br__figure b em {
+  font-style: normal;
+  color: var(--red);
+}
+
+.br__figure span {
+  display: block;
+  margin-top: 0.6rem;
+  font-size: 0.82rem;
+}
+
+.br__figure small {
+  display: block;
+  margin-top: 0.2rem;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.br__gauge {
+  height: 4px;
+  margin-top: 1rem;
+  background: var(--hair-dark);
+}
+
+.br__gauge i {
+  display: block;
+  height: 100%;
+  background: var(--red);
+}
+
+/* ---------- résultats : lignes machine ---------- */
+.br__results {
+  border-top: 2px solid var(--coal);
+}
+
+.br__result {
+  display: grid;
+  grid-template-columns: 4rem minmax(0, 1fr) auto 6.5rem;
+  gap: clamp(0.75rem, 2vw, 1.75rem);
+  align-items: center;
+  padding-block: 0.95rem;
+  border-bottom: 1px solid var(--hair-light);
+  transition: background 140ms linear;
+}
+
+.br__result:hover {
+  background: rgba(20, 18, 16, 0.05);
+}
+
+.br__result-date,
+.br__result-comp {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(20, 18, 16, 0.55);
+}
+
+.br__result-opp {
+  font-family: 'Black Ops One', Impact, sans-serif;
+  font-size: clamp(1.05rem, 1.8vw, 1.4rem);
+  text-transform: uppercase;
+}
+
+.br__result-score {
+  font-family: 'Black Ops One', Impact, sans-serif;
+  font-size: clamp(1.05rem, 1.8vw, 1.35rem);
+}
+
+.br__result-tag {
+  justify-self: end;
+  padding: 0.3rem 0.6rem;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.br__result-tag[data-win='true'] {
+  color: var(--paper);
+  background: var(--coal);
+}
+
+.br__result-tag[data-win='false'] {
+  color: var(--paper);
+  background: var(--red);
+}
+
+/* ---------- partenaires ---------- */
+.br__partners {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.75rem, 1.5vw, 1.25rem);
+}
+
+.br__partner {
+  display: grid;
+  gap: 0.4rem;
+  padding: clamp(1.1rem, 2vw, 1.6rem);
+  background: var(--coal-2);
+  border-left: 3px solid var(--red);
+}
+
+.br__partner b {
+  font-family: 'Black Ops One', Impact, sans-serif;
+  font-size: clamp(0.95rem, 1.5vw, 1.2rem);
+  text-transform: uppercase;
+}
+
+.br__partner span {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+/* ---------- pied ---------- */
+.br__footer {
+  padding-top: var(--section);
+}
+
+.br__footer-in {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: clamp(2rem, 4vw, 4rem);
+  align-items: start;
+}
+
+.br__footer h2 {
+  font-size: clamp(2rem, 5.5vw, 4.5rem);
+}
+
+.br__footer h2 em {
+  font-style: normal;
+  color: var(--red);
+}
+
+.br__socials {
+  display: grid;
+  gap: 1px;
+  background: var(--hair-dark);
+  border: 1px solid var(--hair-dark);
+}
+
+.br__socials a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: var(--coal-2);
+  transition: background 140ms linear, color 140ms linear;
+}
+
+.br__socials a span {
+  color: var(--bone-dim);
+}
+
+.br__socials a:hover {
+  color: var(--coal);
+  background: var(--red);
+}
+
+.br__socials a:hover span {
+  color: rgba(20, 18, 16, 0.7);
+}
+
+.br__legal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 2rem;
+  justify-content: space-between;
+  margin-top: clamp(2.5rem, 4vw, 3.5rem);
+  padding-top: 1.1rem;
+  color: var(--bone-dim);
+  border-top: 1px solid var(--hair-dark);
+}
+
+/* ---------- adaptations ---------- */
+@media (max-width: 1080px) {
+  .br__figures,
+  .br__partners {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .br__hero-grid,
+  .br__footer-in {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .br-row__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .br-row__ph {
+    display: none;
+  }
+  .br__links {
+    display: none;
+  }
+  .br__result {
+    grid-template-columns: 3.25rem minmax(0, 1fr) auto;
+  }
+  .br__result-tag {
+    display: none;
+  }
+}
+
+/* ---------- bandeau défilant ---------- */
+.br__ticker {
+  padding-block: 0.8rem;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  background: var(--coal-2);
+  border-bottom: 1px solid var(--hair-dark);
+}
+
+.br__ticker .lz-ticker__item[data-tone='win'] {
+  color: var(--bone);
+}
+
+.br__ticker .lz-ticker__item[data-tone='loss'] {
+  color: var(--red);
+}
+
+/* ---------- décompte ---------- */
+.br__count {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.9rem;
+  padding: 0.5rem 0.75rem;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bone);
+  background: var(--coal);
+}
+
+.br__count-h {
+  color: var(--red);
+}
+
+.br__count-digits {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.22em;
+}
+
+.br__count--live {
+  justify-content: flex-start;
+  background: var(--red);
+  color: var(--coal);
+}
+
+.br__count-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--coal);
+  animation: br-pulse 2s steps(2, end) infinite;
+}
+
+@keyframes br-pulse {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+/* ---------- filet de progression ---------- */
+.br .lz-line {
+  --lz-rule: var(--hair-dark);
+  --lz-fill-color: var(--red);
+  --lz-text: var(--bone-dim);
+}

@@ -17,7 +17,8 @@ import {
   tint,
   unit,
 } from '../primitives';
-import { BRAND, hashtags, hostOf, lines } from '../caption';
+import { hashtags, hostOf, lines } from '../caption';
+import { brandName } from '../brand';
 import type { FieldDef, SocialStat, StudioData, TemplateDef } from '../types';
 
 /** Carte joueur générée depuis un match (matchday / victoire / défaite). */
@@ -57,7 +58,7 @@ function base(m: Match, g: Game | undefined, p: Player | undefined): Omit<MatchC
   const d = new Date(m.dateISO);
   return {
     gameTag: g?.tag ?? '—',
-    brand: BRAND,
+    brand: brandName(),
     opponent: m.opponent.name,
     competition: m.competition,
     dateLabel: d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' }),
@@ -381,7 +382,7 @@ export const matchdayTemplate: TemplateDef<MatchCardContent> = {
     lines(
       `🔴 MATCH DU JOUR — ${c.gameTag}`,
       ``,
-      `${BRAND} 🆚 ${c.opponent}`,
+      `${brandName()} 🆚 ${c.opponent}`,
       `🏆 ${c.competition}`,
       `🗓️ ${c.dateLabel} · ${c.timeLabel}`,
       c.streamLabel && `📺 ${c.streamLabel}`,
@@ -408,7 +409,7 @@ export const victoireTemplate: TemplateDef<MatchCardContent> = {
     lines(
       `✅ VICTOIRE ${c.scoreUs}–${c.scoreThem} !`,
       ``,
-      `${BRAND} s'impose face à ${c.opponent}.`,
+      `${brandName()} s'impose face à ${c.opponent}.`,
       `🏆 ${c.competition}`,
       ``,
       `${hashtags(c.gameTag)} #Victory`,

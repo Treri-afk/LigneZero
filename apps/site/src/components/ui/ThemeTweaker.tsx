@@ -1,4 +1,12 @@
 import { useEffect, useState } from 'react';
+import {
+  BUILTIN_PRESETS,
+  deleteCustomPreset,
+  loadCustomPresets,
+  saveCustomPreset,
+  type ThemeColors,
+  type ThemePreset,
+} from '@/theme/presets';
 
 /** Variables couleur tweakables (toutes définies dans theme/tokens.css). */
 const GROUPS: { title: string; vars: { v: string; label: string }[] }[] = [
@@ -59,23 +67,47 @@ function readVar(v: string): string {
 export function ThemeTweaker() {
   const [open, setOpen] = useState(false);
   const [vals, setVals] = useState<Record<string, string>>({});
+  const [customPresets, setCustomPresets] = useState<ThemePreset[]>([]);
+  const [activePresetId, setActivePresetId] = useState<string | null>(null);
+  const [presetName, setPresetName] = useState('');
 
-  // charge les overrides sauvegardés + lit les valeurs courantes
+  const presets = [...BUILTIN_PRESETS, ...customPresets];
+
+  // Bascule la classe `theme-light` selon la luminance du fond → permet à la
+  // CSS de neutraliser les textures cockpit sombres (scanlines) en thème clair.
+  const syncThemeMode = () => {
+    const bg = getComputedStyle(document.documentElement).getPropertyValue('--base-900').trim();
+    const m = bg.match(/^#?([0-9a-fA-F]{6})$/);
+    let light = false;
+    if (m) {
+      const n = parseInt(m[1], 16);
+      light = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) > 150;
+    }
+    document.documentElement.classList.toggle('theme-light', light);
+  };
+
+  // charge les overrides sauvegardés (toutes vars, y compris hors panneau) + presets custom
   useEffect(() => {
     const saved: Record<string, string> = JSON.parse(localStorage.getItem(KEY) || '{}');
-    const init: Record<string, string> = {};
-    for (const v of ALL) {
-      if (saved[v]) document.documentElement.style.setProperty(v, saved[v]);
-      init[v] = saved[v] ?? readVar(v);
+    for (const [v, val] of Object.entries(saved)) {
+      document.documentElement.style.setProperty(v, val);
     }
+    const init: Record<string, string> = {};
+    for (const v of ALL) init[v] = saved[v] ?? readVar(v);
     setVals(init);
+    setCustomPresets(loadCustomPresets());
+    syncThemeMode();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const setColor = (v: string, val: string) => {
     document.documentElement.style.setProperty(v, val);
     const next = { ...vals, [v]: val };
     setVals(next);
-    localStorage.setItem(KEY, JSON.stringify(next));
+    const overrides = { ...JSON.parse(localStorage.getItem(KEY) || '{}'), [v]: val };
+    localStorage.setItem(KEY, JSON.stringify(overrides));
+    setActivePresetId(null);
+    syncThemeMode();
   };
 
   const reset = () => {
@@ -84,6 +116,38 @@ export function ThemeTweaker() {
     const init: Record<string, string> = {};
     for (const v of ALL) init[v] = readVar(v);
     setVals(init);
+    setActivePresetId(null);
+    syncThemeMode();
+  };
+
+  const applyPreset = (preset: ThemePreset) => {
+    const overrides = { ...JSON.parse(localStorage.getItem(KEY) || '{}'), ...preset.colors };
+    for (const [v, val] of Object.entries(preset.colors)) {
+      document.documentElement.style.setProperty(v, val as string);
+    }
+    localStorage.setItem(KEY, JSON.stringify(overrides));
+    const init = { ...vals };
+    for (const v of ALL) if (preset.colors[v as keyof ThemeColors]) init[v] = preset.colors[v as keyof ThemeColors]!;
+    setVals(init);
+    setActivePresetId(preset.id);
+    syncThemeMode();
+  };
+
+  const saveAsPreset = () => {
+    const name = presetName.trim();
+    if (!name) return;
+    const colors: ThemeColors = {};
+    for (const v of ALL) colors[v as keyof ThemeColors] = vals[v];
+    const preset = saveCustomPreset(name, colors);
+    setCustomPresets(loadCustomPresets());
+    setActivePresetId(preset.id);
+    setPresetName('');
+  };
+
+  const removePreset = (id: string) => {
+    deleteCustomPreset(id);
+    setCustomPresets(loadCustomPresets());
+    if (activePresetId === id) setActivePresetId(null);
   };
 
   const copy = () => {
@@ -110,6 +174,56 @@ export function ThemeTweaker() {
             <div className="flex gap-2">
               <button type="button" onClick={copy} className="font-mono text-[9px] uppercase tracking-hud text-[color:var(--text-dim)] hover:text-accent" title="Copier le CSS">CSS</button>
               <button type="button" onClick={reset} className="font-mono text-[9px] uppercase tracking-hud text-[color:var(--text-dim)] hover:text-accent">RESET</button>
+            </div>
+          </div>
+
+          <div className="mb-3 border-b border-line pb-3">
+            <p className="mb-1.5 font-mono text-[8px] uppercase tracking-hud text-[color:var(--text-mute)]">Presets</p>
+            <div className="space-y-1">
+              {presets.map((p) => (
+                <div key={p.id} className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => applyPreset(p)}
+                    className={`flex-1 truncate border px-1.5 py-1 text-left font-mono text-[9px] uppercase tracking-hud ${
+                      activePresetId === p.id
+                        ? 'border-accent text-accent'
+                        : 'border-line-strong text-[color:var(--text-dim)] hover:border-accent hover:text-accent'
+                    }`}
+                    title={p.name}
+                  >
+                    {p.name}
+                  </button>
+                  {!p.builtin && (
+                    <button
+                      type="button"
+                      onClick={() => removePreset(p.id)}
+                      className="font-mono text-[9px] text-[color:var(--text-mute)] hover:text-accent"
+                      title="Supprimer ce preset"
+                      aria-label="Supprimer ce preset"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 flex gap-1">
+              <input
+                type="text"
+                value={presetName}
+                onChange={(e) => setPresetName(e.target.value)}
+                placeholder="Nom du preset"
+                className="min-w-0 flex-1 border border-line-strong bg-transparent px-1.5 py-1 font-mono text-[9px] text-[color:var(--text)] placeholder:text-[color:var(--text-mute)]"
+              />
+              <button
+                type="button"
+                onClick={saveAsPreset}
+                disabled={!presetName.trim()}
+                className="border border-line-strong px-1.5 py-1 font-mono text-[9px] uppercase tracking-hud text-[color:var(--text-dim)] hover:border-accent hover:text-accent disabled:opacity-40"
+              >
+                Save
+              </button>
             </div>
           </div>
 

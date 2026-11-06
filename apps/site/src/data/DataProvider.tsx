@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type {
+  BrandSettings,
   Game,
   Player,
   Staff,
@@ -30,6 +31,8 @@ export interface LiveData {
   creators: Creator[];
   clips: Clip[];
   products: Product[];
+  /** Nom + logos de la structure, réglés depuis le manager (page Identité). */
+  brand: BrandSettings;
 }
 
 const Ctx = createContext<LiveData | null>(null);
@@ -41,7 +44,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   async function load() {
     setError(null);
     try {
-      const [games, players, staff, sponsors, matches, creators, clips, products] =
+      const [games, players, staff, sponsors, matches, creators, clips, products, brand] =
         await Promise.all([
           db.listGames(),
           db.listPlayers(),
@@ -51,11 +54,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
           db.listCreators(),
           db.listClips(),
           db.listProducts(),
+          db.getBrandSettings(),
         ]);
       // Le pipeline de suivi (manager) marque l'état de chaque partenariat :
       // la vitrine n'affiche QUE les partenaires actifs.
       const activeSponsors = sponsors.filter((s) => s.status === 'actif');
-      setData({ games, players, staff, sponsors: activeSponsors, matches, creators, clips, products });
+      setData({ games, players, staff, sponsors: activeSponsors, matches, creators, clips, products, brand });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Signal perdu');
     }
@@ -74,6 +78,15 @@ export function useData(): LiveData {
   const v = useContext(Ctx);
   if (!v) throw new Error('useData doit être utilisé dans <DataProvider>');
   return v;
+}
+
+/**
+ * Raccourci vers l'identité de marque. À utiliser partout où l'ancien
+ * placeholder `__BRAND__` était écrit en dur — le nom vient maintenant de la
+ * base et se change depuis le manager sans rebuild.
+ */
+export function useBrand(): BrandSettings {
+  return useData().brand;
 }
 
 // ── Écrans de chargement / erreur (DA béton) ──────────────────────────

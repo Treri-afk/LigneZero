@@ -1,5 +1,6 @@
 import type { FC } from 'react';
-import type { Clip, Creator, Game, Match, Player, Product, Sponsor, Staff } from '@lignezero/types';
+import type { Announcement, BrandSettings, Clip, Creator, Game, Match, Player, Product, Sponsor, Staff } from '@lignezero/types';
+import { DEFAULT_BRAND } from '@lignezero/types';
 import type { FormatId } from './formats';
 
 /** Chiffre clé affiché sur un visuel (chip foil, ligne de stat…). */
@@ -18,6 +19,10 @@ export interface StudioData {
   clips: Clip[];
   creators: Creator[];
   products: Product[];
+  /** Identité de la structure (nom, logos) — réglée dans la page Identité. */
+  brand: BrandSettings;
+  /** Annonces déjà saisies, pour pré-remplir le template Communiqué. */
+  announcements: Announcement[];
 }
 
 export const EMPTY_DATA: StudioData = {
@@ -29,6 +34,8 @@ export const EMPTY_DATA: StudioData = {
   clips: [],
   creators: [],
   products: [],
+  brand: DEFAULT_BRAND,
+  announcements: [],
 };
 
 /** Ce que l'utilisateur a choisi comme source (selon le SourceKind du template). */

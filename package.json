@@ -11,6 +11,8 @@
     "dev:site": "npm run dev -w @lignezero/site",
     "dev:manager": "npm run dev -w @lignezero/manager",
     "build:site": "npm run build -w @lignezero/site",
-    "build:manager": "npm run build -w @lignezero/manager"
+    "build:manager": "npm run build -w @lignezero/manager",
+    "dev:web": "npm run dev -w @lignezero/web",
+    "build:web": "npm run build -w @lignezero/web"
   }
 }

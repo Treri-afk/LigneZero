@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useDocTitle } from '@/hooks/useDocTitle';
 import type { ReactNode } from 'react';
 import { GlitchText } from '@/components/animation/GlitchText';
 import { Bracket } from '@/components/ui/Bracket';
@@ -13,9 +13,7 @@ interface PageHeaderProps {
 
 /** En-tête de page brutalist : code rouge, gros titre, hazard, méta. Pose le <title>. */
 export function PageHeader({ code, title, subtitle, meta }: PageHeaderProps) {
-  useEffect(() => {
-    document.title = `__BRAND__ // ${title}`;
-  }, [title]);
+  useDocTitle(title);
 
   return (
     <header className="relative border-b-2 border-line-strong pb-8">

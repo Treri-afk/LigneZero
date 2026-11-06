@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { studioBrand } from './brand';
 
 /**
  * Primitives visuelles PARTAGÉES par tous les templates du studio réseaux.
@@ -310,6 +311,9 @@ export function Glow({
 
 /** En-tête brand + sigle (haut du visuel). */
 export function BrandHeader({ u, brand, tag }: { u: number; brand: string; tag?: string }) {
+  // Logo réglé dans le manager (page Identité). Absent → le nom en typo display,
+  // comme avant : un visuel n'est jamais bloqué par un logo manquant.
+  const logo = studioBrand().logoUrl;
   return (
     <div
       style={{
@@ -322,7 +326,11 @@ export function BrandHeader({ u, brand, tag }: { u: number; brand: string; tag?:
         alignItems: 'center',
       }}
     >
-      <span style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: u * 4.6, letterSpacing: u * 0.2 }}>{brand}</span>
+      {logo ? (
+        <img src={logo} alt={brand} crossOrigin="anonymous" style={{ height: u * 6.5, width: 'auto', objectFit: 'contain' }} />
+      ) : (
+        <span style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: u * 4.6, letterSpacing: u * 0.2 }}>{brand}</span>
+      )}
       {tag && (
         <span
           style={{

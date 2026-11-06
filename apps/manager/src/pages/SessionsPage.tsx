@@ -133,6 +133,11 @@ export function SessionForm({ draft, games, onClose, onSaved }: { draft: Partial
     setBusy(true);
     try {
       await db.upsertSession({ ...s, startsAt: new Date(s.startsAt).toISOString() });
+      if (!s.id) {
+        const players = await db.listPlayers();
+        const when = new Date(s.startsAt).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+        await Promise.all(players.map((p) => db.notifyPlayer(p.id, 'session', 'Nouvelle session', `${s.title} — ${when}`)));
+      }
       onSaved();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erreur');

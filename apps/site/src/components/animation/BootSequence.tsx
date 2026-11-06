@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useBrand } from '@/data/DataProvider';
 import { ScanlineOverlay } from './ScanlineOverlay';
 
 interface BootSequenceProps {
@@ -29,6 +30,7 @@ export function BootSequence({
   steps = DEFAULT_STEPS,
   fullscreen = true,
 }: BootSequenceProps) {
+  const brand = useBrand();
   const reduced = useReducedMotion();
   const [progress, setProgress] = useState(0); // 0–1
 
@@ -66,7 +68,7 @@ export function BootSequence({
       aria-live="polite"
       aria-label={`Chargement ${pct}%`}
     >
-      <p className="hud-title text-2xl font-bold glow-text">__BRAND__</p>
+      <p className="hud-title text-2xl font-bold glow-text">{brand.name}</p>
 
       {/* jauge segmentée */}
       <div className="flex w-[min(80vw,420px)] gap-[3px]">

@@ -109,6 +109,9 @@ function ObjectiveForm({ draft, players, onClose, onSaved }: { draft: Partial<Ob
     setBusy(true);
     try {
       await db.upsertObjective(o);
+      if (!o.id && o.scope === 'player' && o.playerId) {
+        await db.notifyPlayer(o.playerId, 'objective', 'Nouvel objectif', o.title!.slice(0, 300));
+      }
       onSaved();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erreur');

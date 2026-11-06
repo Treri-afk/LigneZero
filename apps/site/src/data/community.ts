@@ -1,11 +1,8 @@
 import type { Creator, Clip } from '@/types';
 
-/** Discord de la structure (widget/CTA de la page Communauté). */
-export const discord = {
-  members: 4218,
-  online: 312,
-  url: 'https://discord.gg/',
-};
+/* Le Discord vit désormais dans data/socials.ts (DISCORD_URL). Les compteurs
+   membres/en-ligne ont été retirés : ils étaient inventés, et Discord ne les
+   expose pas sans widget activé côté serveur. */
 
 /**
  * Créateurs & streamers de la communauté. AJOUTER = une entrée ici.

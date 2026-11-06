@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useDocTitle } from '@/hooks/useDocTitle';
 import type { FavoriteMatch, InventoryItem } from '@/types';
+import { MatchTicketCard } from '@lignezero/ticket';
 import { useAuth } from '@/auth/AuthProvider';
 import { useData } from '@/data/DataProvider';
-import { db } from '@/lib/supabase';
+import { db, supabase } from '@/lib/supabase';
 import { KeycapButton } from '@/components/ui/KeycapButton';
 import { Bracket } from '@/components/ui/Bracket';
 import { HudFrame } from '@/components/ui/HudFrame';
@@ -20,9 +22,7 @@ const KIND_LABEL: Record<InventoryItem['kind'], string> = {
 export default function AccountPage() {
   const { session, profile, loading } = useAuth();
 
-  useEffect(() => {
-    document.title = '__BRAND__ // Compte';
-  }, []);
+  useDocTitle('Compte');
 
   if (loading) {
     return (
@@ -174,7 +174,7 @@ function Field({
 /* ── Connecté : espace membre ────────────────────────────────────── */
 function MemberDashboard({ displayName }: { displayName?: string }) {
   const { session, signOut } = useAuth();
-  const { matches } = useData();
+  const { matches, games } = useData();
   const [inventory, setInventory] = useState<InventoryItem[] | null>(null);
   const [favorites, setFavorites] = useState<FavoriteMatch[]>([]);
   const [discord, setDiscord] = useState('');
@@ -189,8 +189,24 @@ function MemberDashboard({ displayName }: { displayName?: string }) {
       setFavorites(fav);
       setDiscord(lk?.discordHandle ?? '');
       setTwitch(lk?.twitchHandle ?? '');
+      // Si des comptes OAuth sont liés, on synchronise handle + id fiables.
+      const identities = session?.user.identities ?? [];
+      if (identities.some((i) => i.provider === 'twitch' || i.provider === 'discord')) {
+        const synced = await db.syncMyLinksFromIdentities().catch(() => null);
+        if (synced) {
+          setDiscord(synced.discordHandle ?? '');
+          setTwitch(synced.twitchHandle ?? '');
+        }
+      }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function linkOAuth(provider: 'twitch' | 'discord') {
+    setLinksMsg(null);
+    const { error } = await supabase.auth.linkIdentity({ provider });
+    if (error) setLinksMsg(error.message);
+  }
 
   async function saveLinks(e: React.FormEvent) {
     e.preventDefault();
@@ -266,9 +282,32 @@ function MemberDashboard({ displayName }: { displayName?: string }) {
             </div>
           </dl>
 
-          {/* Liens Discord/Twitch — pour recevoir les drops automatiquement */}
+          {/* Liaison OAuth (recommandé) — identité vérifiée pour les drops */}
+          <div className="mt-5 space-y-2 border-t border-line pt-4">
+            <p className="hud-label text-[9px]">Comptes vérifiés (OAuth)</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => linkOAuth('twitch')}
+                className="border-2 px-2 py-1.5 font-mono text-[10px] font-bold uppercase tracking-hud transition-colors"
+                style={twitch ? { borderColor: 'var(--signal-ok)', color: 'var(--signal-ok)' } : { borderColor: 'var(--line-strong)', color: 'var(--text-dim)' }}
+              >
+                {twitch ? '✓ Twitch' : 'Connecter Twitch'}
+              </button>
+              <button
+                type="button"
+                onClick={() => linkOAuth('discord')}
+                className="border-2 px-2 py-1.5 font-mono text-[10px] font-bold uppercase tracking-hud transition-colors"
+                style={discord ? { borderColor: 'var(--signal-ok)', color: 'var(--signal-ok)' } : { borderColor: 'var(--line-strong)', color: 'var(--text-dim)' }}
+              >
+                {discord ? '✓ Discord' : 'Connecter Discord'}
+              </button>
+            </div>
+          </div>
+
+          {/* Liens manuels (repli si OAuth non configuré) — drops auto */}
           <form onSubmit={saveLinks} className="mt-5 space-y-3 border-t border-line pt-4">
-            <p className="hud-label text-[9px]">Lier tes comptes (drops auto)</p>
+            <p className="hud-label text-[9px]">…ou saisir à la main</p>
             <input
               value={discord}
               onChange={(e) => setDiscord(e.target.value)}
@@ -307,20 +346,48 @@ function MemberDashboard({ displayName }: { displayName?: string }) {
               </HudFrame>
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {inventory.map((item) => (
-                  <div key={item.id} className="cut-panel panel-concrete border-2 border-line-strong p-3 shadow-ink-sm">
-                    {item.image && (
-                      <img src={item.image} alt="" className="mb-2 aspect-square w-full border border-line object-cover" />
-                    )}
-                    <span className="inline-block border border-line-strong px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-hud text-accent">
-                      {KIND_LABEL[item.kind]}
-                    </span>
-                    <p className="mt-1.5 hud-title text-sm font-bold leading-tight">{item.name}</p>
-                    {item.description && (
-                      <p className="mt-1 font-mono text-[10px] leading-snug text-[color:var(--text-mute)]">{item.description}</p>
-                    )}
-                  </div>
-                ))}
+                {inventory.map((item) => {
+                  // Ticket de match : rendu réel via les paramètres du Studio Match.
+                  const tm = item.kind === 'ticket' && item.matchId ? matches.find((m) => m.id === item.matchId) : null;
+                  if (tm) {
+                    const tag = games.find((g) => g.id === tm.gameId)?.tag ?? '—';
+                    return (
+                      <div key={item.id} className="ticket-tilt col-span-2 flex justify-center overflow-visible py-2 sm:col-span-3">
+                        <div className="ticket-tilt-card">
+                          <MatchTicketCard
+                            match={{ id: tm.id, opponentName: tm.opponent.name, dateISO: tm.dateISO, competition: tm.competition, status: tm.status, score: tm.score, streamUrl: tm.streamUrl, vodUrl: tm.vodUrl }}
+                            gameTag={tag}
+                            ticket={tm.ticket}
+                          />
+                        </div>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={item.id} className="cut-panel panel-concrete border-2 border-line-strong p-3 shadow-ink-sm">
+                      {item.image && (
+                        <img src={item.image} alt="" className="mb-2 aspect-square w-full border border-line object-cover" />
+                      )}
+                      <span className="inline-block border border-line-strong px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-hud text-accent">
+                        {KIND_LABEL[item.kind]}
+                      </span>
+                      <p className="mt-1.5 hud-title text-sm font-bold leading-tight">{item.name}</p>
+                      {item.description && (
+                        <p className="mt-1 font-mono text-[10px] leading-snug text-[color:var(--text-mute)]">{item.description}</p>
+                      )}
+                      {item.link && (
+                        <a
+                          href={item.link}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-2 inline-block border border-line-strong px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-hud text-accent transition-colors hover:border-accent"
+                        >
+                          ▶ Voir le clip
+                        </a>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useDocTitle } from '@/hooks/useDocTitle';
 import { Link, useParams } from 'react-router-dom';
 import { useData } from '@/data/DataProvider';
 import { MediaFrame } from '@/components/ui/MediaFrame';
@@ -14,9 +14,7 @@ export default function PlayerPage() {
   const { slug } = useParams();
   const player = players.find((p) => playerSlug(p.pseudo) === slug);
 
-  useEffect(() => {
-    document.title = player ? `__BRAND__ // ${player.pseudo}` : '__BRAND__ // Joueur';
-  }, [player]);
+  useDocTitle(player ? player.pseudo : 'Joueur');
 
   if (!player) {
     return (

@@ -1,0 +1,65 @@
+/* Bandeau défilant. Couleurs et typo fournies par la DA hôte. */
+.lz-ticker {
+  --lz-ticker-gap: clamp(1.5rem, 3vw, 3rem);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.lz-ticker__track {
+  display: flex;
+  width: max-content;
+  animation-name: lz-ticker-run;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.lz-ticker:hover .lz-ticker__track,
+.lz-ticker:focus-within .lz-ticker__track {
+  animation-play-state: paused;
+}
+
+.lz-ticker__clone {
+  display: flex;
+}
+
+.lz-ticker__row {
+  display: flex;
+  align-items: center;
+  gap: var(--lz-ticker-gap);
+  padding-right: var(--lz-ticker-gap);
+}
+
+.lz-ticker__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  white-space: nowrap;
+}
+
+.lz-ticker__bullet {
+  width: 5px;
+  height: 5px;
+  background: currentColor;
+}
+
+@keyframes lz-ticker-run {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lz-ticker {
+    overflow-x: auto;
+  }
+  .lz-ticker__track {
+    animation: none;
+  }
+  .lz-ticker__clone {
+    display: none;
+  }
+}

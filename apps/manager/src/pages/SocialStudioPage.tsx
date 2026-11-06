@@ -3,6 +3,7 @@ import { toPng } from 'html-to-image';
 import { db } from '@/lib/supabase';
 import { Button, Panel, Spinner } from '@/components/ui';
 import { FORMATS, type FormatId } from '@/social/formats';
+import { setStudioBrand } from '@/social/brand';
 import {
   EMPTY_DATA,
   GROUP_LABELS,
@@ -81,7 +82,7 @@ export function SocialStudioPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [games, players, matches, sponsors, clips, creators, products] = await Promise.all([
+        const [games, players, matches, sponsors, clips, creators, products, brand, announcements] = await Promise.all([
           db.listGames(),
           db.listPlayers(),
           db.listMatches(),
@@ -89,8 +90,13 @@ export function SocialStudioPage() {
           db.listClips().catch(() => []),
           db.listCreators().catch(() => []),
           db.listProducts().catch(() => []),
+          db.getBrandSettings(),
+          db.listAnnouncements().catch(() => []),
         ]);
-        const d: StudioData = { games, players, matches, staff: [], sponsors, clips, creators, products };
+        // Les templates et les primitives lisent la marque via ce singleton
+        // (voir social/brand.ts) plutôt que de la recevoir en cascade.
+        setStudioBrand(brand);
+        const d: StudioData = { games, players, matches, staff: [], sponsors, clips, creators, products, brand, announcements };
         setData(d);
         const initial: Selection = {
           matchId: matches[0]?.id,

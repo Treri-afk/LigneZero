@@ -14,7 +14,8 @@ import {
   shade,
   unit,
 } from '../primitives';
-import { BRAND, hashtags, lines } from '../caption';
+import { hashtags, lines } from '../caption';
+import { brandName } from '../brand';
 import type { FieldDef, StudioData, TemplateDef } from '../types';
 
 export interface StatHighlightContent {
@@ -120,7 +121,7 @@ export const statHighlightTemplate: TemplateDef<StatHighlightContent> = {
       playerName: p.pseudo,
       playerRole: p.role,
       gameTag: g?.tag ?? '—',
-      brand: BRAND,
+      brand: brandName(),
       playerColor: p.color ?? C.accent,
       playerPhoto: p.photo,
     };

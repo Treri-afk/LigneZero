@@ -14,7 +14,8 @@ import {
   Photo,
   unit,
 } from '../primitives';
-import { BRAND, hashtags, lines } from '../caption';
+import { hashtags, lines } from '../caption';
+import { brandName } from '../brand';
 import type { FieldDef, StudioData, TemplateDef } from '../types';
 
 export interface PartnershipContent {
@@ -99,7 +100,7 @@ function PartnershipVisual({ content: c, w, h }: { content: PartnershipContent; 
         </div>
       </div>
 
-      {/* connecteur × entre BRAND et le sponsor */}
+      {/* connecteur × entre brandName() et le sponsor */}
       <div style={{ position: 'absolute', left: land ? boxLeft - u * 7 : w * 0.5 - u * 4, top: land ? boxTop + boxH / 2 - u * 5.5 : boxTop - u * 9, textAlign: 'center' }}>
         <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: u * 9, lineHeight: 1, color: C.accent, textShadow: `${u * 0.4}px ${u * 0.5}px 0 ${C.base900}` }}>×</div>
       </div>
@@ -134,10 +135,10 @@ export const partnershipTemplate: TemplateDef<PartnershipContent> = {
     if (!s) return null;
     return {
       headline: 'PARTENAIRE',
-      brand: BRAND,
+      brand: brandName(),
       sponsorName: s.name,
       sponsorLogo: s.logo,
-      tagline: s.tagline ?? s.description ?? `${BRAND} × ${s.name}.`,
+      tagline: s.tagline ?? s.description ?? `${brandName()} × ${s.name}.`,
       tier: s.tier,
       sector: s.sector ?? '',
       since: s.since ? `${s.since}` : '',
@@ -145,7 +146,7 @@ export const partnershipTemplate: TemplateDef<PartnershipContent> = {
   },
   caption: (c) =>
     lines(
-      `🤝 ${BRAND} × ${c.sponsorName}`,
+      `🤝 ${brandName()} × ${c.sponsorName}`,
       ``,
       c.tagline,
       `Partenaire ${c.tier}${c.sector ? ` · ${c.sector}` : ''}.`,

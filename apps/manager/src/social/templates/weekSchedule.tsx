@@ -1,5 +1,6 @@
 import { BackdropWord, Bloom, BrandHeader, C, ChamferPanel, CornerTicks, DISPLAY, Frame, HazardBand, LogoBadge, MONO, TitleBlock, unit } from '../primitives';
-import { BRAND, hashtags, lines } from '../caption';
+import { hashtags, lines } from '../caption';
+import { brandName } from '../brand';
 import type { FieldDef, StudioData, TemplateDef } from '../types';
 import { matchesOfWeek } from '../week';
 
@@ -94,7 +95,7 @@ export const weekScheduleTemplate: TemplateDef<WeekScheduleContent> = {
     const week = matchesOfWeek(data.matches, sel.weekStart);
     return {
       headline: 'PROGRAMME',
-      brand: BRAND,
+      brand: brandName(),
       weekLabel: weekLabelOf(sel.weekStart),
       rows: week.map((m) => {
         const g = data.games.find((x) => x.id === m.gameId);

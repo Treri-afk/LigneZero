@@ -5,13 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0a0a0c" />
 
-    <!-- SEO de base — remplace __BRAND__ et les placeholders OG -->
-    <title>__BRAND__ // Structure Esport</title>
-    <meta name="description" content="__BRAND__ — structure esport française. Équipe, calendrier, boutique." />
+    <!--
+      SEO de base. ATTENTION : ce fichier est statique, il ne peut PAS lire la
+      table brand_settings. Le <title> est réécrit dès que React monte
+      (hook useDocTitle), mais les balises Open Graph ci-dessous sont lues par
+      les robots SANS exécuter le JS : elles restent figées.
+      → à mettre à jour ici si le nom de la structure change.
+    -->
+    <title>LIGNE ZERO // Structure Esport</title>
+    <meta name="description" content="LIGNE ZERO — structure esport française. Équipe, calendrier, boutique." />
 
-    <!-- Open Graph (placeholder) -->
+    <!-- Open Graph (statique, voir remarque ci-dessus) -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="__BRAND__ // Structure Esport" />
+    <meta property="og:title" content="LIGNE ZERO // Structure Esport" />
     <meta property="og:description" content="Structure esport française. Streetwear / lifestyle." />
     <meta property="og:image" content="/og/cover.png" />
     <meta name="twitter:card" content="summary_large_image" />

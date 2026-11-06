@@ -1,6 +1,7 @@
 import type { Creator } from '@lignezero/types';
 import { BackdropWord, Bloom, BrandHeader, C, CornerTicks, DISPLAY, Frame, MONO, Photo, unit } from '../primitives';
-import { BRAND, hashtags, lines } from '../caption';
+import { hashtags, lines } from '../caption';
+import { brandName } from '../brand';
 import type { FieldDef, StudioData, TemplateDef } from '../types';
 
 export interface LiveNowContent {
@@ -134,7 +135,7 @@ export const liveNowTemplate: TemplateDef<LiveNowContent> = {
     const cr: Creator | undefined = data.creators.find((x) => x.id === sel.creatorId) ?? data.creators[0];
     if (!cr) return null;
     return {
-      brand: BRAND,
+      brand: brandName(),
       name: cr.name,
       role: cr.role ?? 'Créateur',
       platform: cr.platform,

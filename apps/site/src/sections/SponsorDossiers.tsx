@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import HTMLFlipBook from 'react-pageflip';
 import type { Sponsor } from '@/types';
-import { useData } from '@/data/DataProvider';
+import { useData, useBrand } from '@/data/DataProvider';
 
 // react-pageflip a des types laxistes → alias permissif.
 const FlipBook = HTMLFlipBook as unknown as React.FC<Record<string, unknown>>;
@@ -93,7 +93,8 @@ function Redacted({ w = '5rem' }: { w?: string }) {
 }
 
 /* Pages (droite) — lore façon SCP, généré depuis les données. */
-function dossierPages(s: Sponsor, i: number) {
+/** Fonction pure (pas un composant) : le nom de la marque arrive en paramètre. */
+function dossierPages(s: Sponsor, i: number, brandName: string) {
   const d = s.dossier ?? {};
   return [
     {
@@ -115,7 +116,7 @@ function dossierPages(s: Sponsor, i: number) {
       node: (
         <div className="space-y-2 font-mono text-[10px] leading-relaxed text-[color:var(--text-dim)]">
           <p className="font-bold uppercase tracking-hud text-[color:var(--text)]">Rôle dans la structure</p>
-          <p>{s.contribution ?? '—'}. Le partenaire est intégré au fonctionnement quotidien de <span className="text-accent">__BRAND__</span> et audité chaque saison.</p>
+          <p>{s.contribution ?? '—'}. Le partenaire est intégré au fonctionnement quotidien de <span className="text-accent">{brandName}</span> et audité chaque saison.</p>
           <p>Niveau d'accès aux installations : {d.classification ?? 'NIVEAU 1'}. Contact opérationnel classé <Redacted w="4rem" />.</p>
         </div>
       ),
@@ -164,7 +165,8 @@ function dossierPages(s: Sponsor, i: number) {
 
 /* ── Focus : le dossier s'ouvre comme un livre (page à gauche) ── */
 function DossierFocus({ s, i, onClose }: { s: Sponsor; i: number; onClose: () => void }) {
-  const pages = dossierPages(s, i);
+  const brand = useBrand();
+  const pages = dossierPages(s, i, brand.name);
   const [enter, setEnter] = useState(false);
 
   useLayoutEffect(() => {
@@ -205,7 +207,7 @@ function DossierFocus({ s, i, onClose }: { s: Sponsor; i: number; onClose: () =>
 
           {/* INTÉRIEUR DE COUVERTURE — sommaire */}
           <Leaf>
-            <p className="font-mono text-[8px] font-bold uppercase tracking-hud text-[color:var(--text-mute)]">PROPRIÉTÉ DE __BRAND__ · CONFIDENTIEL</p>
+            <p className="font-mono text-[8px] font-bold uppercase tracking-hud text-[color:var(--text-mute)]">PROPRIÉTÉ DE {brand.name} · CONFIDENTIEL</p>
             <div className="mt-3 flex items-center justify-center border-2 border-line-strong bg-base-800 py-8">
               <span className="stamp px-4 py-2 font-display text-2xl font-bold uppercase tracking-hud">{s.name}</span>
             </div>
@@ -230,7 +232,7 @@ function DossierFocus({ s, i, onClose }: { s: Sponsor; i: number; onClose: () =>
           {/* DOS (rigide) */}
           <Sheet hard>
             <div className="flex h-full w-full flex-col items-center justify-center gap-2" style={{ background: FOLDER, color: 'var(--text)' }}>
-              <span className="stamp px-3 py-1 font-display text-lg font-bold uppercase tracking-hud">__BRAND__</span>
+              <span className="stamp px-3 py-1 font-display text-lg font-bold uppercase tracking-hud">{brand.name}</span>
               <span className="font-mono text-[8px] uppercase tracking-hud text-[color:var(--text-mute)]">— fin du dossier —</span>
             </div>
           </Sheet>

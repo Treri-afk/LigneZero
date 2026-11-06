@@ -7,6 +7,8 @@ interface CutPanelProps extends HTMLAttributes<HTMLDivElement> {
   /** Fine arête d'accent en haut (souligne, ne brille pas). */
   edge?: boolean;
   edgeVariant?: 'primary' | 'secondary';
+  /** Anime la cutline au montage : un scan d'accent balaie le biseau. */
+  scan?: boolean;
 }
 
 /**
@@ -15,11 +17,11 @@ interface CutPanelProps extends HTMLAttributes<HTMLDivElement> {
  * Pas de glow — l'accent n'apparaît qu'en fine arête si `edge`.
  */
 export const CutPanel = forwardRef<HTMLDivElement, CutPanelProps>(
-  ({ className = '', cut = 'default', edge = false, edgeVariant = 'primary', children, ...rest }, ref) => {
+  ({ className = '', cut = 'default', edge = false, edgeVariant = 'primary', scan = false, children, ...rest }, ref) => {
     const shape = cut === 'alt' ? 'cut-panel-alt' : 'cut-panel';
     const edgeColor = edgeVariant === 'secondary' ? 'var(--accent-2)' : 'var(--accent)';
     return (
-      <div ref={ref} className={`relative ${className}`} {...rest}>
+      <div ref={ref} className={`relative ${scan ? 'cutline-scan overflow-hidden' : ''} ${className}`} {...rest}>
         {/* liseré cutline (légèrement plus grand) simulant la tranche de plaque */}
         <div
           aria-hidden

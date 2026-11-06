@@ -15,7 +15,8 @@ import {
   TitleBlock,
   unit,
 } from '../primitives';
-import { BRAND, hashtags, lines } from '../caption';
+import { hashtags, lines } from '../caption';
+import { brandName } from '../brand';
 import type { FieldDef, StudioData, TemplateDef } from '../types';
 
 interface LineupPlayer {
@@ -168,7 +169,7 @@ export const lineupTemplate: TemplateDef<LineupContent> = {
     return {
       headline: 'LINE-UP',
       gameTag: g?.tag ?? '—',
-      brand: BRAND,
+      brand: brandName(),
       opponent: m.opponent.name,
       competition: m.competition,
       dateLabel: d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' }),
@@ -180,7 +181,7 @@ export const lineupTemplate: TemplateDef<LineupContent> = {
     lines(
       `📋 LINE-UP — ${c.gameTag}`,
       ``,
-      `${BRAND} 🆚 ${c.opponent}`,
+      `${brandName()} 🆚 ${c.opponent}`,
       `🗓️ ${c.dateLabel} · ${c.timeLabel}`,
       ``,
       c.players.map((p) => `• ${p.name} — ${p.role}`).join('\n'),
@@ -209,7 +210,7 @@ export const rosterRevealTemplate: TemplateDef<LineupContent> = {
     return {
       headline: 'ROSTER',
       gameTag: g.tag,
-      brand: BRAND,
+      brand: brandName(),
       opponent: '',
       competition: g.name,
       dateLabel: '',

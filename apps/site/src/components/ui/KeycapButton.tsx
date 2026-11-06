@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import type { ReactNode } from 'react';
-import { playClick } from '@/lib/sound';
+import { useState, type ReactNode } from 'react';
+import { playClick, vibrate } from '@/lib/sound';
 
 type Variant = 'primary' | 'secondary';
 type Size = 'sm' | 'md' | 'lg';
@@ -48,6 +48,7 @@ const SIZES: Record<Size, string> = {
  */
 export function KeycapButton(props: KeycapButtonProps) {
   const { children, variant = 'primary', size = 'md', className = '', sound = false } = props;
+  const [spark, setSpark] = useState(0);
 
   // Brutalist : blocs PLEINS (rouge / bone) + ombre d'encre dure, pas de glow.
   const fill =
@@ -55,22 +56,28 @@ export function KeycapButton(props: KeycapButtonProps) {
       ? 'bg-paper text-ink'
       : 'bg-accent text-[color:var(--paper)]';
 
-  const onPress = () => sound && playClick('down');
+  const onDown = () => {
+    if (sound) playClick('down');
+    vibrate(9);
+    setSpark((s) => s + 1); // remonte l'anim de l'éclair
+  };
+  const onUp = () => { if (sound) playClick('up'); };
 
   const inner = (
     <span
       className={[
-        'cut-panel relative flex items-center justify-center gap-2 border-2',
+        'cut-panel relative flex items-center justify-center gap-2 overflow-hidden border-2',
         'font-mono font-bold uppercase tracking-hud',
         fill,
         'shadow-ink-sm transition-all duration-snap ease-mech',
-        'group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 group-hover:shadow-ink',
-        'group-active:translate-x-0 group-active:translate-y-0 group-active:shadow-none',
+        'group-hover:-translate-x-0.5 group-hover:-translate-y-1 group-hover:shadow-ink',
+        'group-active:translate-x-0.5 group-active:translate-y-1 group-active:shadow-none',
         SIZES[size],
       ].join(' ')}
       style={{ borderColor: 'var(--ink)' }}
     >
       {children}
+      {spark > 0 && <span key={spark} aria-hidden className="kc-spark" />}
     </span>
   );
 
@@ -78,32 +85,20 @@ export function KeycapButton(props: KeycapButtonProps) {
 
   if ('to' in props && props.to !== undefined) {
     return (
-      <Link to={props.to} onClick={props.onClick} onMouseDown={onPress} className={wrap}>
+      <Link to={props.to} onClick={props.onClick} onPointerDown={onDown} onPointerUp={onUp} className={wrap}>
         {inner}
       </Link>
     );
   }
   if ('href' in props && props.href !== undefined) {
     return (
-      <a
-        href={props.href}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={props.onClick}
-        onMouseDown={onPress}
-        className={wrap}
-      >
+      <a href={props.href} target="_blank" rel="noopener noreferrer" onClick={props.onClick} onPointerDown={onDown} onPointerUp={onUp} className={wrap}>
         {inner}
       </a>
     );
   }
   return (
-    <button
-      type={props.type ?? 'button'}
-      onClick={props.onClick}
-      onMouseDown={onPress}
-      className={wrap}
-    >
+    <button type={props.type ?? 'button'} onClick={props.onClick} onPointerDown={onDown} onPointerUp={onUp} className={wrap}>
       {inner}
     </button>
   );

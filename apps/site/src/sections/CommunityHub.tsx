@@ -1,5 +1,5 @@
-import { discord } from '@/data/community';
-import { socials } from '@/data/socials';
+import {  } from '@/data/community';
+import { socials, DISCORD_URL } from '@/data/socials';
 import { useData } from '@/data/DataProvider';
 import { KeycapCard } from '@/components/ui/KeycapCard';
 import { KeycapButton } from '@/components/ui/KeycapButton';
@@ -128,15 +128,9 @@ export function CommunityHub() {
 
       {/* ── DISCORD ───────────────────────────────────────────── */}
       <div className="mt-14 flex flex-col items-center justify-between gap-5 border-2 border-line-strong panel-concrete p-6 shadow-ink sm:flex-row">
-        <div>
-          <p className="hud-title text-2xl font-bold leading-none">Rejoins le Discord</p>
-          <p className="mt-2 font-mono text-[11px] uppercase tracking-hud text-[color:var(--text-dim)]">
-            <span className="text-accent">{nf.format(discord.members)}</span> membres ·{' '}
-            <span className="inline-block h-1.5 w-1.5 animate-live rounded-full bg-signal-ok align-middle" />{' '}
-            {nf.format(discord.online)} en ligne
-          </p>
-        </div>
-        <KeycapButton href={discord.url} size="lg">Rejoindre &gt;</KeycapButton>
+        {/* Compteurs membres/en-ligne RETIRÉS : ils étaient inventés. */}
+        <p className="hud-title text-2xl font-bold leading-none">Rejoins le Discord</p>
+        <KeycapButton href={DISCORD_URL} size="lg">Rejoindre &gt;</KeycapButton>
       </div>
     </div>
   );

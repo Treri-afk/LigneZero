@@ -6,6 +6,23 @@
  * Les objets imbriqués sont stockés en jsonb → cast au passage.
  */
 import type {
+  BrandSettings,
+  Tournament,
+  TournamentFormat,
+  TournamentStatus,
+  TournamentTeam,
+  TournamentTeamStatus,
+  TournamentPlayer,
+  TournamentStage,
+  TournamentStageKind,
+  TournamentMatch,
+  TournamentMatchStatus,
+  BracketSide,
+  TournamentLobby,
+  LobbyEntry,
+  LobbyStatus,
+  PointRule,
+  ReseedMode,
   Game,
   Player,
   Staff,
@@ -14,6 +31,7 @@ import type {
   Match,
   MatchOpponent,
   MatchScore,
+  MatchTicket,
   Creator,
   Clip,
   Product,
@@ -57,6 +75,30 @@ import type {
   InventoryItem,
   FavoriteMatch,
   MemberLinks,
+  BotConfig,
+  BotCommand,
+  BotCommandRole,
+  BotEvent,
+  BotFeatureKey,
+  BotTimer,
+  BotQuote,
+  ViewerPoints,
+  BotReward,
+  BotRewardKind,
+  RewardRedemption,
+  RedemptionStatus,
+  BotAlert,
+  AlertEventType,
+  MatchPrediction,
+  PredictionStatus,
+  PredictionBet,
+  BotNotification,
+  NotificationStatus,
+  DiscordCommand,
+  DiscordCommandKind,
+  DiscordRoute,
+  DiscordRouteMode,
+  TicketTemplate,
   TryoutCampaign,
   TryoutCampaignStatus,
   Candidate,
@@ -67,7 +109,7 @@ import type {
   SessionCandidate,
   CandidateSessionStatus,
 } from '@lignezero/types';
-import type { Tables, TablesInsert } from './database.types';
+import type { Tables, TablesInsert, Json } from './database.types';
 
 /** null → undefined (les types domaine utilisent `?`, pas `| null`). */
 const u = <T>(v: T | null): T | undefined => (v == null ? undefined : v);
@@ -218,6 +260,7 @@ export function fromMatchRow(r: Tables<'matches'>): Match {
     score: (u(r.score) as MatchScore | undefined) ?? undefined,
     streamUrl: u(r.stream_url),
     vodUrl: u(r.vod_url),
+    ticket: (u(r.ticket) as MatchTicket | undefined) ?? undefined,
   };
 }
 export function toMatchRow(m: Match): TablesInsert<'matches'> {
@@ -231,6 +274,7 @@ export function toMatchRow(m: Match): TablesInsert<'matches'> {
     score: (m.score ?? null) as unknown as TablesInsert<'matches'>['score'],
     stream_url: m.streamUrl ?? null,
     vod_url: m.vodUrl ?? null,
+    ticket: (m.ticket ?? null) as unknown as TablesInsert<'matches'>['ticket'],
   };
 }
 
@@ -583,6 +627,8 @@ export function fromInventoryItemRow(r: Tables<'inventory_items'>): InventoryIte
     description: u(r.description),
     image: u(r.image),
     source: u(r.source),
+    link: u(r.link),
+    matchId: u(r.match_id),
     obtainedAt: r.obtained_at,
   };
 }
@@ -597,10 +643,375 @@ export function toFavoriteMatchRow(f: FavoriteMatch): TablesInsert<'favorite_mat
 
 // ── Liens Discord/Twitch ───────────────────────────────────────────
 export function fromMemberLinksRow(r: Tables<'member_links'>): MemberLinks {
-  return { ownerId: r.owner_id, discordHandle: u(r.discord_handle), twitchHandle: u(r.twitch_handle) };
+  return {
+    ownerId: r.owner_id,
+    discordHandle: u(r.discord_handle),
+    twitchHandle: u(r.twitch_handle),
+    twitchUserId: u(r.twitch_user_id),
+    discordUserId: u(r.discord_user_id),
+  };
 }
 export function toMemberLinksRow(m: MemberLinks): TablesInsert<'member_links'> {
-  return { owner_id: m.ownerId, discord_handle: m.discordHandle ?? null, twitch_handle: m.twitchHandle ?? null };
+  return {
+    owner_id: m.ownerId,
+    discord_handle: m.discordHandle ?? null,
+    twitch_handle: m.twitchHandle ?? null,
+    twitch_user_id: m.twitchUserId ?? null,
+    discord_user_id: m.discordUserId ?? null,
+  };
+}
+
+
+// ── Tournois ───────────────────────────────────────────────────────
+export function fromTournamentRow(r: Tables<'tournaments'>): Tournament {
+  return {
+    id: r.id,
+    slug: r.slug,
+    name: r.name,
+    gameId: u(r.game_id),
+    format: r.format as TournamentFormat,
+    status: r.status as TournamentStatus,
+    teamSize: r.team_size,
+    maxTeams: u(r.max_teams),
+    groupCount: r.group_count,
+    qualifiersPerGroup: r.qualifiers_per_group,
+    playoffFormat: r.playoff_format as Tournament['playoffFormat'],
+    groupRounds: r.group_rounds,
+    teamsPerLobby: r.teams_per_lobby,
+    pointRules: (r.point_rules as unknown as PointRule[]) ?? [],
+    reseedMode: r.reseed_mode as ReseedMode,
+    prize: u(r.prize),
+    rules: u(r.rules),
+    description: u(r.description),
+    coverUrl: u(r.cover_url),
+    startsAt: u(r.starts_at),
+    endsAt: u(r.ends_at),
+  };
+}
+export function toTournamentRow(t: Tournament): TablesInsert<'tournaments'> {
+  return {
+    id: t.id || undefined,
+    slug: t.slug,
+    name: t.name,
+    game_id: t.gameId ?? null,
+    format: t.format,
+    status: t.status,
+    team_size: t.teamSize,
+    max_teams: t.maxTeams ?? null,
+    group_count: t.groupCount,
+    qualifiers_per_group: t.qualifiersPerGroup,
+    playoff_format: t.playoffFormat,
+    group_rounds: t.groupRounds,
+    teams_per_lobby: t.teamsPerLobby,
+    point_rules: (t.pointRules ?? []) as unknown as TablesInsert<'tournaments'>['point_rules'],
+    reseed_mode: t.reseedMode,
+    prize: t.prize ?? null,
+    rules: t.rules ?? null,
+    description: t.description ?? null,
+    cover_url: t.coverUrl ?? null,
+    starts_at: t.startsAt ?? null,
+    ends_at: t.endsAt ?? null,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+export function fromTournamentPlayerRow(r: Tables<'tournament_players'>): TournamentPlayer {
+  return { id: r.id, teamId: r.team_id, pseudo: r.pseudo, role: u(r.role), isCaptain: r.is_captain, sortOrder: r.sort_order };
+}
+export function toTournamentPlayerRow(p: TournamentPlayer): TablesInsert<'tournament_players'> {
+  return { id: p.id || undefined, team_id: p.teamId, pseudo: p.pseudo, role: p.role ?? null, is_captain: p.isCaptain, sort_order: p.sortOrder };
+}
+
+/** `players` est rempli à part (requête séparée) — vide par défaut. */
+export function fromTournamentTeamRow(r: Tables<'tournament_teams'>): TournamentTeam {
+  return {
+    id: r.id,
+    tournamentId: r.tournament_id,
+    name: r.name,
+    tag: u(r.tag),
+    logoUrl: u(r.logo_url),
+    color: u(r.color),
+    seed: u(r.seed),
+    status: r.status as TournamentTeamStatus,
+    placement: u(r.placement),
+    disqualified: r.disqualified,
+    disqualifiedReason: u(r.disqualified_reason),
+    tiebreakOrder: r.tiebreak_order,
+    tiebreakNote: u(r.tiebreak_note),
+    players: [],
+  };
+}
+export function toTournamentTeamRow(t: TournamentTeam): TablesInsert<'tournament_teams'> {
+  return {
+    id: t.id || undefined,
+    tournament_id: t.tournamentId,
+    name: t.name,
+    tag: t.tag ?? null,
+    logo_url: t.logoUrl ?? null,
+    color: t.color ?? null,
+    seed: t.seed ?? null,
+    status: t.status,
+    placement: t.placement ?? null,
+    disqualified: t.disqualified,
+    disqualified_reason: t.disqualifiedReason ?? null,
+    tiebreak_order: t.tiebreakOrder,
+    tiebreak_note: t.tiebreakNote ?? null,
+  };
+}
+
+export function fromLobbyEntryRow(r: Tables<'tournament_lobby_entries'>): LobbyEntry {
+  return { id: r.id, lobbyId: r.lobby_id, teamId: r.team_id, placement: u(r.placement), points: r.points, dnf: r.dnf, sortOrder: r.sort_order };
+}
+export function toLobbyEntryRow(e: LobbyEntry): TablesInsert<'tournament_lobby_entries'> {
+  return { id: e.id || undefined, lobby_id: e.lobbyId, team_id: e.teamId, placement: e.placement ?? null, points: e.points, dnf: e.dnf, sort_order: e.sortOrder };
+}
+
+/** `entries` est rempli à part — vide par défaut. */
+export function fromLobbyRow(r: Tables<'tournament_lobbies'>): TournamentLobby {
+  return {
+    id: r.id,
+    tournamentId: r.tournament_id,
+    round: r.round,
+    position: r.position,
+    label: u(r.label),
+    status: r.status as LobbyStatus,
+    scheduledAt: u(r.scheduled_at),
+    streamUrl: u(r.stream_url),
+    entries: [],
+  };
+}
+export function toLobbyRow(l: TournamentLobby): TablesInsert<'tournament_lobbies'> {
+  return {
+    id: l.id || undefined,
+    tournament_id: l.tournamentId,
+    round: l.round,
+    position: l.position,
+    label: l.label ?? null,
+    status: l.status,
+    scheduled_at: l.scheduledAt ?? null,
+    stream_url: l.streamUrl ?? null,
+  };
+}
+
+export function fromTournamentStageRow(r: Tables<'tournament_stages'>): TournamentStage {
+  return { id: r.id, tournamentId: r.tournament_id, kind: r.kind as TournamentStageKind, name: r.name, sortOrder: r.sort_order };
+}
+export function toTournamentStageRow(s: TournamentStage): TablesInsert<'tournament_stages'> {
+  return { id: s.id || undefined, tournament_id: s.tournamentId, kind: s.kind, name: s.name, sort_order: s.sortOrder };
+}
+
+export function fromTournamentMatchRow(r: Tables<'tournament_matches'>): TournamentMatch {
+  return {
+    id: r.id,
+    tournamentId: r.tournament_id,
+    stageId: u(r.stage_id),
+    bracket: (u(r.bracket) as BracketSide | undefined) ?? undefined,
+    round: r.round,
+    position: r.position,
+    groupLabel: u(r.group_label),
+    teamAId: u(r.team_a_id),
+    teamBId: u(r.team_b_id),
+    scoreA: u(r.score_a),
+    scoreB: u(r.score_b),
+    winnerId: u(r.winner_id),
+    nextMatchId: u(r.next_match_id),
+    nextSlot: (u(r.next_slot) as 'a' | 'b' | undefined) ?? undefined,
+    loserMatchId: u(r.loser_match_id),
+    loserSlot: (u(r.loser_slot) as 'a' | 'b' | undefined) ?? undefined,
+    status: r.status as TournamentMatchStatus,
+    scheduledAt: u(r.scheduled_at),
+    streamUrl: u(r.stream_url),
+  };
+}
+export function toTournamentMatchRow(m: TournamentMatch): TablesInsert<'tournament_matches'> {
+  return {
+    id: m.id || undefined,
+    tournament_id: m.tournamentId,
+    stage_id: m.stageId ?? null,
+    bracket: m.bracket ?? null,
+    round: m.round,
+    position: m.position,
+    group_label: m.groupLabel ?? null,
+    team_a_id: m.teamAId ?? null,
+    team_b_id: m.teamBId ?? null,
+    score_a: m.scoreA ?? null,
+    score_b: m.scoreB ?? null,
+    winner_id: m.winnerId ?? null,
+    next_match_id: m.nextMatchId ?? null,
+    next_slot: m.nextSlot ?? null,
+    loser_match_id: m.loserMatchId ?? null,
+    loser_slot: m.loserSlot ?? null,
+    status: m.status,
+    scheduled_at: m.scheduledAt ?? null,
+    stream_url: m.streamUrl ?? null,
+  };
+}
+
+// ── Identité de marque ─────────────────────────────────────────────
+export function fromBrandSettingsRow(r: Tables<'brand_settings'>): BrandSettings {
+  return {
+    name: r.name,
+    shortName: r.short_name,
+    logoUrl: u(r.logo_url),
+    markUrl: u(r.mark_url),
+    accent: r.accent,
+    tagline: u(r.tagline),
+    handle: u(r.handle),
+  };
+}
+export function toBrandSettingsRow(b: BrandSettings): TablesInsert<'brand_settings'> {
+  return {
+    id: 'default', // ligne unique : l'upsert écrase toujours la même
+    name: b.name,
+    short_name: b.shortName,
+    logo_url: b.logoUrl ?? null,
+    mark_url: b.markUrl ?? null,
+    accent: b.accent,
+    tagline: b.tagline ?? null,
+    handle: b.handle ?? null,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+// ── Bot Twitch/Discord ─────────────────────────────────────────────
+export function fromBotConfigRow(r: Tables<'bot_config'>): BotConfig {
+  return {
+    twitchChannel: u(r.twitch_channel),
+    twitchBotUsername: u(r.twitch_bot_username),
+    claimMessage: r.claim_message,
+    claimMessageUnlinked: r.claim_message_unlinked,
+    ticketsEnabled: r.tickets_enabled,
+    clipsEnabled: r.clips_enabled,
+    autoSetLive: r.auto_set_live,
+    cartridgeName: r.cartridge_name,
+    cooldownSec: r.cooldown_sec,
+    features: (r.features as Partial<Record<BotFeatureKey, boolean>>) ?? {},
+    discordInvite: u(r.discord_invite),
+    pointsName: r.points_name,
+    pointsPerMessage: r.points_per_message,
+    pointsPerClaim: r.points_per_claim,
+    discordGuildId: u(r.discord_guild_id),
+    discordAnnounceChannelId: u(r.discord_announce_channel_id),
+    discordSubRoleId: u(r.discord_sub_role_id),
+    discordLiveMessage: r.discord_live_message,
+    discordAnnounce: r.discord_announce,
+    discordNotifications: r.discord_notifications,
+    discordSubRole: r.discord_subrole,
+    discordPrefix: r.discord_prefix,
+    discordMessageContent: r.discord_message_content,
+  };
+}
+export function toBotConfigRow(c: BotConfig): TablesInsert<'bot_config'> {
+  return {
+    id: true,
+    twitch_channel: c.twitchChannel ?? null,
+    twitch_bot_username: c.twitchBotUsername ?? null,
+    claim_message: c.claimMessage,
+    claim_message_unlinked: c.claimMessageUnlinked,
+    tickets_enabled: c.ticketsEnabled,
+    clips_enabled: c.clipsEnabled,
+    auto_set_live: c.autoSetLive,
+    cartridge_name: c.cartridgeName,
+    cooldown_sec: c.cooldownSec,
+    features: c.features as Json,
+    discord_invite: c.discordInvite ?? null,
+    points_name: c.pointsName,
+    points_per_message: c.pointsPerMessage,
+    points_per_claim: c.pointsPerClaim,
+    discord_guild_id: c.discordGuildId ?? null,
+    discord_announce_channel_id: c.discordAnnounceChannelId ?? null,
+    discord_sub_role_id: c.discordSubRoleId ?? null,
+    discord_live_message: c.discordLiveMessage,
+    discord_announce: c.discordAnnounce,
+    discord_notifications: c.discordNotifications,
+    discord_subrole: c.discordSubRole,
+    discord_prefix: c.discordPrefix,
+    discord_message_content: c.discordMessageContent,
+    updated_at: new Date().toISOString(),
+  };
+}
+export function fromBotCommandRow(r: Tables<'bot_commands'>): BotCommand {
+  return { id: r.id, trigger: r.trigger, response: r.response, enabled: r.enabled, minRole: r.min_role as BotCommandRole, cooldownSec: r.cooldown_sec };
+}
+export function toBotCommandRow(c: BotCommand): TablesInsert<'bot_commands'> {
+  return { id: c.id || undefined, trigger: c.trigger, response: c.response, enabled: c.enabled, min_role: c.minRole, cooldown_sec: c.cooldownSec, updated_at: new Date().toISOString() };
+}
+export function fromBotEventRow(r: Tables<'bot_events'>): BotEvent {
+  return { id: r.id, kind: r.kind, twitchUser: u(r.twitch_user), ownerId: u(r.owner_id), matchId: u(r.match_id), detail: r.detail ?? undefined, createdAt: r.created_at };
+}
+export function fromBotTimerRow(r: Tables<'bot_timers'>): BotTimer {
+  return { id: r.id, label: r.label, message: r.message, intervalSec: r.interval_sec, enabled: r.enabled };
+}
+export function toBotTimerRow(t: BotTimer): TablesInsert<'bot_timers'> {
+  return { id: t.id || undefined, label: t.label, message: t.message, interval_sec: t.intervalSec, enabled: t.enabled };
+}
+export function fromBotQuoteRow(r: Tables<'bot_quotes'>): BotQuote {
+  return { id: r.id, text: r.text, addedBy: u(r.added_by), createdAt: r.created_at };
+}
+export function fromViewerPointsRow(r: Tables<'viewer_points'>): ViewerPoints {
+  return { twitchLogin: r.twitch_login, ownerId: u(r.owner_id), points: r.points, watchMinutes: r.watch_minutes };
+}
+export function fromBotRewardRow(r: Tables<'bot_rewards'>): BotReward {
+  return {
+    id: r.id, name: r.name, description: u(r.description), cost: r.cost,
+    kind: r.kind as BotRewardKind, payload: (r.payload as Record<string, unknown>) ?? {},
+    stock: r.stock ?? undefined, enabled: r.enabled, sortOrder: r.sort_order,
+  };
+}
+export function toBotRewardRow(b: BotReward): TablesInsert<'bot_rewards'> {
+  return {
+    id: b.id || undefined, name: b.name, description: b.description ?? null, cost: b.cost,
+    kind: b.kind, payload: (b.payload ?? {}) as Json, stock: b.stock ?? null,
+    enabled: b.enabled, sort_order: b.sortOrder,
+  };
+}
+export function fromRewardRedemptionRow(r: Tables<'reward_redemptions'>): RewardRedemption {
+  return {
+    id: r.id, rewardId: u(r.reward_id), rewardName: r.reward_name, twitchLogin: r.twitch_login,
+    ownerId: u(r.owner_id), cost: r.cost, status: r.status as RedemptionStatus, note: u(r.note),
+    createdAt: r.created_at, decidedAt: u(r.decided_at),
+  };
+}
+export function fromBotAlertRow(r: Tables<'bot_alerts'>): BotAlert {
+  return { id: r.id, eventType: r.event_type as AlertEventType, enabled: r.enabled, message: r.message, rewardPoints: r.reward_points, minAmount: r.min_amount };
+}
+export function toBotAlertRow(a: BotAlert): TablesInsert<'bot_alerts'> {
+  return { id: a.id || undefined, event_type: a.eventType, enabled: a.enabled, message: a.message, reward_points: a.rewardPoints, min_amount: a.minAmount, updated_at: new Date().toISOString() };
+}
+export function fromMatchPredictionRow(r: Tables<'match_predictions'>): MatchPrediction {
+  return {
+    id: r.id, matchId: u(r.match_id), question: r.question, options: (r.options as string[]) ?? [],
+    status: r.status as PredictionStatus, winningOption: r.winning_option ?? undefined, createdAt: r.created_at,
+  };
+}
+export function fromPredictionBetRow(r: Tables<'prediction_bets'>): PredictionBet {
+  return { id: r.id, predictionId: r.prediction_id, twitchLogin: r.twitch_login, ownerId: u(r.owner_id), optionIndex: r.option_index, amount: r.amount };
+}
+export function fromBotNotificationRow(r: Tables<'bot_notifications'>): BotNotification {
+  return { id: r.id, ownerId: u(r.owner_id), playerId: u(r.player_id), kind: r.kind, title: r.title, body: u(r.body), status: r.status as NotificationStatus, createdAt: r.created_at };
+}
+export function fromDiscordCommandRow(r: Tables<'discord_commands'>): DiscordCommand {
+  return {
+    id: r.id, trigger: r.trigger, kind: r.kind as DiscordCommandKind, response: r.response,
+    description: r.description, enabled: r.enabled, allowedChannels: (r.allowed_channels as string[]) ?? [],
+    minRoleId: u(r.min_role_id), cooldownSec: r.cooldown_sec,
+  };
+}
+export function toDiscordCommandRow(c: DiscordCommand): TablesInsert<'discord_commands'> {
+  return {
+    id: c.id || undefined, trigger: c.trigger, kind: c.kind, response: c.response, description: c.description,
+    enabled: c.enabled, allowed_channels: c.allowedChannels as Json, min_role_id: c.minRoleId ?? null,
+    cooldown_sec: c.cooldownSec, updated_at: new Date().toISOString(),
+  };
+}
+export function fromDiscordRouteRow(r: Tables<'discord_routes'>): DiscordRoute {
+  return { kind: r.kind, mode: r.mode as DiscordRouteMode, channelId: u(r.channel_id) };
+}
+export function toDiscordRouteRow(d: DiscordRoute): TablesInsert<'discord_routes'> {
+  return { kind: d.kind, mode: d.mode, channel_id: d.channelId ?? null, updated_at: new Date().toISOString() };
+}
+export function fromTicketTemplateRow(r: Tables<'ticket_templates'>): TicketTemplate {
+  return { id: r.id, name: r.name, doc: r.doc as unknown as TicketTemplate['doc'], createdAt: r.created_at };
 }
 
 // ── Suivi sponsors (table privée manager) ──────────────────────────

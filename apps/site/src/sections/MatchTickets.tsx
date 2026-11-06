@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Match, MatchStatus } from '@/types';
+import { TicketBody as SharedBody, TicketStub as SharedStub, TicketSeam, TicketBridge, ticketDims, type TicketMatch } from '@lignezero/ticket';
 import { useData } from '@/data/DataProvider';
-import { formatDate, formatTime, sortMatches } from '@/lib/format';
+import { sortMatches } from '@/lib/format';
 
 const ALL = 'all';
 const TW = 360;
@@ -19,75 +20,48 @@ function access(m: Match): { stub: string; action: string; url?: string } {
   return { stub: 'À VENIR', action: m.streamUrl ? '▶ STREAM' : 'BIENTÔT', url: m.streamUrl };
 }
 
-/* ── Demi-perforation : chaque partie garde la moitié des points (rip au milieu) ── */
-function HalfSeam({ part }: { part: 'body' | 'stub' }) {
-  // body → centre du point sur le bord DROIT (montre la moitié gauche)
-  // stub → centre du point sur le bord GAUCHE (montre la moitié droite)
-  const pos = part === 'body' ? 'right' : 'left';
-  return (
-    <div
-      className="concrete w-[6px] shrink-0 self-stretch"
-      style={{
-        backgroundImage: `radial-gradient(circle at ${pos} center, var(--ink) 2.5px, transparent 2.9px)`,
-        backgroundSize: '6px 15px',
-        backgroundRepeat: 'repeat-y',
-      }}
-    />
-  );
+/* ── Ticket : parts PARTAGÉES (@lignezero/ticket), pilotées par m.ticket
+   (Studio Match). Le rip du calendrier réutilise ces parts telles quelles. ── */
+const toTM = (m: Match): TicketMatch => ({
+  id: m.id,
+  opponentName: m.opponent.name,
+  dateISO: m.dateISO,
+  competition: m.competition,
+  status: m.status,
+  score: m.score,
+  streamUrl: m.streamUrl,
+  vodUrl: m.vodUrl,
+});
+
+function HalfSeam({ part, m }: { part: 'body' | 'stub'; m: Match }) {
+  return <TicketSeam part={part} ticket={m.ticket} />;
 }
 
-/* ── Contenu ────────────────────────────────────────────────── */
 function TicketBody({ m }: { m: Match }) {
-  const { games } = useData();
-  const gameTag = (id: string) => games.find((g) => g.id === id)?.tag ?? '—';
-  return (
-    <div className="concrete relative flex min-w-0 flex-1 flex-col justify-between p-4">
-      <div className="flex items-center justify-between">
-        <span className="bg-accent px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-hud text-[color:var(--paper)]">
-          {gameTag(m.gameId)}
-        </span>
-        <span className="font-mono text-[10px] font-bold uppercase tracking-hud text-ink">
-          {formatDate(m.dateISO)} · {formatTime(m.dateISO)}
-        </span>
-      </div>
-      <div className="my-2">
-        <p className="font-display text-xl font-bold uppercase leading-none text-ink">__BRAND__</p>
-        <p className="font-mono text-[10px] uppercase tracking-hud text-ink/60">vs</p>
-        <p className="font-display text-xl font-bold uppercase leading-none text-ink">{m.opponent.name}</p>
-      </div>
-      <div className="flex items-end justify-between">
-        <span className="max-w-[60%] truncate font-mono text-[9px] uppercase tracking-hud text-ink/60">{m.competition}</span>
-        <span className="ticket-barcode h-6 w-20 text-ink" />
-      </div>
-    </div>
-  );
+  const { games, brand } = useData();
+  const gameTag = games.find((g) => g.id === m.gameId)?.tag ?? '—';
+  return <SharedBody match={toTM(m)} gameTag={gameTag} ticket={m.ticket} brand={brand.name} />;
 }
 
 function TicketStub({ m }: { m: Match }) {
-  const a = access(m);
-  return (
-    <div className="flex h-full w-[96px] shrink-0 flex-col items-center justify-between bg-accent p-3 text-[color:var(--paper)]">
-      <span className="font-mono text-[8px] uppercase tracking-hud opacity-80">ADMIT ONE</span>
-      {m.score ? (
-        <span className="hud-title text-2xl font-bold leading-none">
-          {m.score.us}-{m.score.them}
-        </span>
-      ) : (
-        <span className="font-mono text-2xl">●</span>
-      )}
-      <span className="text-center font-mono text-[8px] font-bold uppercase leading-tight tracking-hud">{a.stub}</span>
-      <span className="font-mono text-[8px] opacity-70">#{m.id.replace(/\D/g, '').padStart(4, '0')}</span>
-    </div>
-  );
+  const { games, brand } = useData();
+  const gameTag = games.find((g) => g.id === m.gameId)?.tag ?? '—';
+  return <SharedStub match={toTM(m)} gameTag={gameTag} ticket={m.ticket} brand={brand.name} />;
 }
 
-/** Ticket complet, intact (table / mobile). */
+/** Ticket complet, intact (table / mobile). Taille = dimensions du doc. */
 function TicketCard({ m }: { m: Match }) {
+  const d = ticketDims(m.ticket);
+  const docMode = !!m.ticket?.doc;
+  const style: React.CSSProperties = docMode
+    ? { position: 'relative', width: d.width, height: d.height, filter: 'drop-shadow(5px 5px 0 rgba(0,0,0,0.35))' }
+    : { width: d.width, height: d.height, borderRadius: d.radius };
   return (
-    <div className="flex h-[168px] w-[360px] select-none overflow-hidden border border-ink/20 shadow-paper">
+    <div className={`flex select-none ${docMode ? '' : 'overflow-hidden border border-ink/20 shadow-paper'}`} style={style}>
+      {docMode && m.ticket?.doc && <TicketBridge doc={m.ticket.doc} />}
       <TicketBody m={m} />
-      <HalfSeam part="body" />
-      <HalfSeam part="stub" />
+      <HalfSeam part="body" m={m} />
+      <HalfSeam part="stub" m={m} />
       <TicketStub m={m} />
     </div>
   );
@@ -169,7 +143,7 @@ function FocusTicket({ m, rect, onClose }: { m: Match; rect: DOMRect; onClose: (
           {/* corps : garde la MOITIÉ GAUCHE des points */}
           <div className="flex flex-1 overflow-hidden border border-ink/20 shadow-paper">
             <TicketBody m={m} />
-            <HalfSeam part="body" />
+            <HalfSeam part="body" m={m} />
           </div>
           {/* talon : garde la MOITIÉ DROITE des points et s'arrache en pivotant pile au milieu */}
           <div
@@ -186,7 +160,7 @@ function FocusTicket({ m, rect, onClose }: { m: Match; rect: DOMRect; onClose: (
               transition: drag.current ? 'none' : 'transform 0.5s cubic-bezier(0.16,1,0.3,1), opacity 0.5s',
             }}
           >
-            <HalfSeam part="stub" />
+            <HalfSeam part="stub" m={m} />
             <TicketStub m={m} />
           </div>
         </div>

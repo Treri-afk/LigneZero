@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useBrand } from '@/data/DataProvider';
 
 /**
  * Habillage cockpit fixe au-dessus de tout le viewport (non interactif) :
@@ -6,6 +7,7 @@ import { useEffect, useState } from 'react';
  * Donne la sensation d'un HUD qui encadre la page, pas un simple fond plat.
  */
 export function CockpitOverlay() {
+  const brand = useBrand();
   const [time, setTime] = useState('--:--:--');
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export function CockpitOverlay() {
 
       {/* version bas-gauche */}
       <div className="fixed bottom-5 left-12 hidden font-mono text-[10px] uppercase tracking-hud text-[color:var(--text-mute)] md:block">
-        __BRAND__ // v0.1.0
+        {brand.name} // v0.1.0
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import type { Product } from '@lignezero/types';
 import { BackdropWord, Bloom, BrandHeader, C, ChamferPanel, ConeHeadline, CornerTicks, DISPLAY, Frame, MONO, Photo, unit } from '../primitives';
-import { BRAND, hashtags, lines } from '../caption';
+import { hashtags, lines } from '../caption';
+import { brandName } from '../brand';
 import type { FieldDef, StudioData, TemplateDef } from '../types';
 
 export interface ProductDropContent {
@@ -85,7 +86,7 @@ export const productDropTemplate: TemplateDef<ProductDropContent> = {
     if (!p) return null;
     return {
       headline: p.status === 'soon' ? 'BIENTÔT' : 'DISPO',
-      brand: BRAND,
+      brand: brandName(),
       name: p.name,
       category: p.category,
       price: p.price ?? '',

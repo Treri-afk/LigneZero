@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Nav } from './Nav';
-import { useAuth } from '@/auth/AuthProvider';
+import { BrandLogo } from '@/components/ui/BrandLogo';
+import { useBrand } from '@/data/DataProvider';
 
 /** Header HUD fixe, façon cockpit. Se densifie au scroll. */
 export function Header() {
-  const { session, profile } = useAuth();
+  const brand = useBrand();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const pseudo = profile?.displayName || session?.user.email?.split('@')[0];
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -28,11 +28,9 @@ export function Header() {
       <div className="h-px w-full bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
 
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        {/* Logo / brand placeholder */}
-        <Link to="/" className="group flex items-center gap-2" aria-label="__BRAND__ — accueil">
-          <span aria-hidden className="font-mono text-accent">[</span>
-          <span className="hud-title text-lg font-bold tracking-wide2 glow-text">__BRAND__</span>
-          <span aria-hidden className="font-mono text-accent">]</span>
+        {/* Logo de la structure (réglé dans le manager), repli sur le nom */}
+        <Link to="/" className="group flex items-center gap-2" aria-label={`${brand.name} — accueil`}>
+          <BrandLogo />
         </Link>
 
         {/* Nav desktop */}
@@ -47,18 +45,8 @@ export function Header() {
             SYSTEM&nbsp;ONLINE
           </span>
 
-          {/* Accès compte (point d'entrée dédié, hors menu numéroté) */}
-          <Link
-            to="/compte"
-            aria-label="Accès compte"
-            className={[
-              'flex items-center gap-1.5 border px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-hud transition-colors duration-ui hover:border-accent hover:text-[color:var(--text)]',
-              session ? 'border-accent text-[color:var(--text)]' : 'border-line text-[color:var(--text-dim)]',
-            ].join(' ')}
-          >
-            <span aria-hidden className="text-accent">{session ? '●' : '⬡'}</span>
-            <span className="hidden sm:inline">{session ? pseudo : 'Compte'}</span>
-          </Link>
+          {/* Bouton COMPTE RETIRÉ : l'espace membre n'est pas utilisé.
+              La page /compte existe toujours et reste joignable par son URL. */}
 
           <button
             type="button"

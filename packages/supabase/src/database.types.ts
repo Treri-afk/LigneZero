@@ -33,6 +33,150 @@ export type Database = {
         Update: { id?: string; kind?: string; category?: string; label?: string; amount?: number; tx_date?: string; sponsor_id?: string | null; notes?: string | null; created_at?: string }
         Relationships: []
       }
+      tournament_lobbies: {
+        Row: { id: string; tournament_id: string; round: number; position: number; label: string | null; status: string; scheduled_at: string | null; stream_url: string | null; created_at: string }
+        Insert: { id?: string; tournament_id: string; round?: number; position?: number; label?: string | null; status?: string; scheduled_at?: string | null; stream_url?: string | null; created_at?: string }
+        Update: { id?: string; tournament_id?: string; round?: number; position?: number; label?: string | null; status?: string; scheduled_at?: string | null; stream_url?: string | null; created_at?: string }
+        Relationships: []
+      }
+      tournament_lobby_entries: {
+        Row: { id: string; lobby_id: string; team_id: string; placement: number | null; points: number; dnf: boolean; sort_order: number }
+        Insert: { id?: string; lobby_id: string; team_id: string; placement?: number | null; points?: number; dnf?: boolean; sort_order?: number }
+        Update: { id?: string; lobby_id?: string; team_id?: string; placement?: number | null; points?: number; dnf?: boolean; sort_order?: number }
+        Relationships: []
+      }
+      tournaments: {
+        Row: { id: string; slug: string; name: string; game_id: string | null; format: string; status: string; team_size: number; max_teams: number | null; group_count: number; qualifiers_per_group: number; playoff_format: string; group_rounds: number; teams_per_lobby: number; point_rules: Json; reseed_mode: string; prize: string | null; rules: string | null; description: string | null; cover_url: string | null; starts_at: string | null; ends_at: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; slug: string; name: string; game_id?: string | null; format?: string; status?: string; team_size?: number; max_teams?: number | null; group_count?: number; qualifiers_per_group?: number; playoff_format?: string; group_rounds?: number; teams_per_lobby?: number; point_rules?: Json; reseed_mode?: string; prize?: string | null; rules?: string | null; description?: string | null; cover_url?: string | null; starts_at?: string | null; ends_at?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; slug?: string; name?: string; game_id?: string | null; format?: string; status?: string; team_size?: number; max_teams?: number | null; group_count?: number; qualifiers_per_group?: number; playoff_format?: string; group_rounds?: number; teams_per_lobby?: number; point_rules?: Json; reseed_mode?: string; prize?: string | null; rules?: string | null; description?: string | null; cover_url?: string | null; starts_at?: string | null; ends_at?: string | null; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      tournament_teams: {
+        Row: { id: string; tournament_id: string; name: string; tag: string | null; logo_url: string | null; color: string | null; seed: number | null; status: string; placement: number | null; disqualified: boolean; disqualified_reason: string | null; tiebreak_order: number; tiebreak_note: string | null; created_at: string }
+        Insert: { id?: string; tournament_id: string; name: string; tag?: string | null; logo_url?: string | null; color?: string | null; seed?: number | null; status?: string; placement?: number | null; disqualified?: boolean; disqualified_reason?: string | null; tiebreak_order?: number; tiebreak_note?: string | null; created_at?: string }
+        Update: { id?: string; tournament_id?: string; name?: string; tag?: string | null; logo_url?: string | null; color?: string | null; seed?: number | null; status?: string; placement?: number | null; disqualified?: boolean; disqualified_reason?: string | null; tiebreak_order?: number; tiebreak_note?: string | null; created_at?: string }
+        Relationships: []
+      }
+      tournament_players: {
+        Row: { id: string; team_id: string; pseudo: string; role: string | null; is_captain: boolean; sort_order: number }
+        Insert: { id?: string; team_id: string; pseudo: string; role?: string | null; is_captain?: boolean; sort_order?: number }
+        Update: { id?: string; team_id?: string; pseudo?: string; role?: string | null; is_captain?: boolean; sort_order?: number }
+        Relationships: []
+      }
+      tournament_stages: {
+        Row: { id: string; tournament_id: string; kind: string; name: string; sort_order: number }
+        Insert: { id?: string; tournament_id: string; kind?: string; name: string; sort_order?: number }
+        Update: { id?: string; tournament_id?: string; kind?: string; name?: string; sort_order?: number }
+        Relationships: []
+      }
+      tournament_matches: {
+        Row: { id: string; tournament_id: string; stage_id: string | null; bracket: string | null; round: number; position: number; group_label: string | null; team_a_id: string | null; team_b_id: string | null; score_a: number | null; score_b: number | null; winner_id: string | null; next_match_id: string | null; next_slot: string | null; loser_match_id: string | null; loser_slot: string | null; status: string; scheduled_at: string | null; stream_url: string | null }
+        Insert: { id?: string; tournament_id: string; stage_id?: string | null; bracket?: string | null; round?: number; position?: number; group_label?: string | null; team_a_id?: string | null; team_b_id?: string | null; score_a?: number | null; score_b?: number | null; winner_id?: string | null; next_match_id?: string | null; next_slot?: string | null; loser_match_id?: string | null; loser_slot?: string | null; status?: string; scheduled_at?: string | null; stream_url?: string | null }
+        Update: { id?: string; tournament_id?: string; stage_id?: string | null; bracket?: string | null; round?: number; position?: number; group_label?: string | null; team_a_id?: string | null; team_b_id?: string | null; score_a?: number | null; score_b?: number | null; winner_id?: string | null; next_match_id?: string | null; next_slot?: string | null; loser_match_id?: string | null; loser_slot?: string | null; status?: string; scheduled_at?: string | null; stream_url?: string | null }
+        Relationships: []
+      }
+      brand_settings: {
+        Row: { id: string; name: string; short_name: string; logo_url: string | null; mark_url: string | null; accent: string; tagline: string | null; handle: string | null; updated_at: string }
+        Insert: { id?: string; name?: string; short_name?: string; logo_url?: string | null; mark_url?: string | null; accent?: string; tagline?: string | null; handle?: string | null; updated_at?: string }
+        Update: { id?: string; name?: string; short_name?: string; logo_url?: string | null; mark_url?: string | null; accent?: string; tagline?: string | null; handle?: string | null; updated_at?: string }
+        Relationships: []
+      }
+      bot_config: {
+        Row: { id: boolean; twitch_channel: string | null; twitch_bot_username: string | null; claim_message: string; claim_message_unlinked: string; tickets_enabled: boolean; clips_enabled: boolean; auto_set_live: boolean; cartridge_name: string; cooldown_sec: number; features: Json; discord_invite: string | null; points_name: string; points_per_message: number; points_per_claim: number; discord_guild_id: string | null; discord_announce_channel_id: string | null; discord_sub_role_id: string | null; discord_live_message: string; discord_announce: boolean; discord_notifications: boolean; discord_subrole: boolean; discord_prefix: string; discord_message_content: boolean; updated_at: string }
+        Insert: { id?: boolean; twitch_channel?: string | null; twitch_bot_username?: string | null; claim_message?: string; claim_message_unlinked?: string; tickets_enabled?: boolean; clips_enabled?: boolean; auto_set_live?: boolean; cartridge_name?: string; cooldown_sec?: number; features?: Json; discord_invite?: string | null; points_name?: string; points_per_message?: number; points_per_claim?: number; discord_guild_id?: string | null; discord_announce_channel_id?: string | null; discord_sub_role_id?: string | null; discord_live_message?: string; discord_announce?: boolean; discord_notifications?: boolean; discord_subrole?: boolean; discord_prefix?: string; discord_message_content?: boolean; updated_at?: string }
+        Update: { id?: boolean; twitch_channel?: string | null; twitch_bot_username?: string | null; claim_message?: string; claim_message_unlinked?: string; tickets_enabled?: boolean; clips_enabled?: boolean; auto_set_live?: boolean; cartridge_name?: string; cooldown_sec?: number; features?: Json; discord_invite?: string | null; points_name?: string; points_per_message?: number; points_per_claim?: number; discord_guild_id?: string | null; discord_announce_channel_id?: string | null; discord_sub_role_id?: string | null; discord_live_message?: string; discord_announce?: boolean; discord_notifications?: boolean; discord_subrole?: boolean; discord_prefix?: string; discord_message_content?: boolean; updated_at?: string }
+        Relationships: []
+      }
+      viewer_points: {
+        Row: { twitch_login: string; owner_id: string | null; points: number; watch_minutes: number; updated_at: string }
+        Insert: { twitch_login: string; owner_id?: string | null; points?: number; watch_minutes?: number; updated_at?: string }
+        Update: { twitch_login?: string; owner_id?: string | null; points?: number; watch_minutes?: number; updated_at?: string }
+        Relationships: []
+      }
+      bot_timers: {
+        Row: { id: string; label: string; message: string; interval_sec: number; enabled: boolean; created_at: string }
+        Insert: { id?: string; label: string; message: string; interval_sec?: number; enabled?: boolean; created_at?: string }
+        Update: { id?: string; label?: string; message?: string; interval_sec?: number; enabled?: boolean; created_at?: string }
+        Relationships: []
+      }
+      bot_quotes: {
+        Row: { id: number; text: string; added_by: string | null; created_at: string }
+        Insert: { id?: number; text: string; added_by?: string | null; created_at?: string }
+        Update: { id?: number; text?: string; added_by?: string | null; created_at?: string }
+        Relationships: []
+      }
+      bot_rewards: {
+        Row: { id: string; name: string; description: string | null; cost: number; kind: string; payload: Json; stock: number | null; enabled: boolean; sort_order: number; created_at: string }
+        Insert: { id?: string; name: string; description?: string | null; cost: number; kind?: string; payload?: Json; stock?: number | null; enabled?: boolean; sort_order?: number; created_at?: string }
+        Update: { id?: string; name?: string; description?: string | null; cost?: number; kind?: string; payload?: Json; stock?: number | null; enabled?: boolean; sort_order?: number; created_at?: string }
+        Relationships: []
+      }
+      reward_redemptions: {
+        Row: { id: string; reward_id: string | null; reward_name: string; twitch_login: string; owner_id: string | null; cost: number; status: string; note: string | null; created_at: string; decided_at: string | null; decided_by: string | null }
+        Insert: { id?: string; reward_id?: string | null; reward_name: string; twitch_login: string; owner_id?: string | null; cost: number; status?: string; note?: string | null; created_at?: string; decided_at?: string | null; decided_by?: string | null }
+        Update: { id?: string; reward_id?: string | null; reward_name?: string; twitch_login?: string; owner_id?: string | null; cost?: number; status?: string; note?: string | null; created_at?: string; decided_at?: string | null; decided_by?: string | null }
+        Relationships: []
+      }
+      bot_alerts: {
+        Row: { id: string; event_type: string; enabled: boolean; message: string; reward_points: number; min_amount: number; updated_at: string }
+        Insert: { id?: string; event_type: string; enabled?: boolean; message: string; reward_points?: number; min_amount?: number; updated_at?: string }
+        Update: { id?: string; event_type?: string; enabled?: boolean; message?: string; reward_points?: number; min_amount?: number; updated_at?: string }
+        Relationships: []
+      }
+      match_predictions: {
+        Row: { id: string; match_id: string | null; question: string; options: Json; status: string; winning_option: number | null; created_at: string }
+        Insert: { id?: string; match_id?: string | null; question: string; options: Json; status?: string; winning_option?: number | null; created_at?: string }
+        Update: { id?: string; match_id?: string | null; question?: string; options?: Json; status?: string; winning_option?: number | null; created_at?: string }
+        Relationships: []
+      }
+      prediction_bets: {
+        Row: { id: string; prediction_id: string; twitch_login: string; owner_id: string | null; option_index: number; amount: number; created_at: string }
+        Insert: { id?: string; prediction_id: string; twitch_login: string; owner_id?: string | null; option_index: number; amount: number; created_at?: string }
+        Update: { id?: string; prediction_id?: string; twitch_login?: string; owner_id?: string | null; option_index?: number; amount?: number; created_at?: string }
+        Relationships: []
+      }
+      bot_notifications: {
+        Row: { id: string; owner_id: string | null; player_id: string | null; kind: string; title: string; body: string | null; status: string; created_at: string; delivered_at: string | null }
+        Insert: { id?: string; owner_id?: string | null; player_id?: string | null; kind: string; title: string; body?: string | null; status?: string; created_at?: string; delivered_at?: string | null }
+        Update: { id?: string; owner_id?: string | null; player_id?: string | null; kind?: string; title?: string; body?: string | null; status?: string; created_at?: string; delivered_at?: string | null }
+        Relationships: []
+      }
+      discord_commands: {
+        Row: { id: string; trigger: string; kind: string; response: string; description: string; enabled: boolean; allowed_channels: Json; min_role_id: string | null; cooldown_sec: number; created_at: string; updated_at: string }
+        Insert: { id?: string; trigger: string; kind?: string; response: string; description?: string; enabled?: boolean; allowed_channels?: Json; min_role_id?: string | null; cooldown_sec?: number; created_at?: string; updated_at?: string }
+        Update: { id?: string; trigger?: string; kind?: string; response?: string; description?: string; enabled?: boolean; allowed_channels?: Json; min_role_id?: string | null; cooldown_sec?: number; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      discord_routes: {
+        Row: { kind: string; mode: string; channel_id: string | null; updated_at: string }
+        Insert: { kind: string; mode?: string; channel_id?: string | null; updated_at?: string }
+        Update: { kind?: string; mode?: string; channel_id?: string | null; updated_at?: string }
+        Relationships: []
+      }
+      ticket_templates: {
+        Row: { id: string; name: string; doc: Json; created_by: string | null; created_at: string }
+        Insert: { id?: string; name: string; doc: Json; created_by?: string | null; created_at?: string }
+        Update: { id?: string; name?: string; doc?: Json; created_by?: string | null; created_at?: string }
+        Relationships: []
+      }
+      bot_commands: {
+        Row: { id: string; trigger: string; response: string; enabled: boolean; min_role: string; cooldown_sec: number; created_at: string; updated_at: string }
+        Insert: { id?: string; trigger: string; response: string; enabled?: boolean; min_role?: string; cooldown_sec?: number; created_at?: string; updated_at?: string }
+        Update: { id?: string; trigger?: string; response?: string; enabled?: boolean; min_role?: string; cooldown_sec?: number; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      ticket_claims: {
+        Row: { owner_id: string; match_id: string; source: string; claimed_at: string }
+        Insert: { owner_id: string; match_id: string; source?: string; claimed_at?: string }
+        Update: { owner_id?: string; match_id?: string; source?: string; claimed_at?: string }
+        Relationships: []
+      }
+      bot_events: {
+        Row: { id: number; kind: string; twitch_user: string | null; owner_id: string | null; match_id: string | null; detail: Json | null; created_at: string }
+        Insert: { id?: number; kind: string; twitch_user?: string | null; owner_id?: string | null; match_id?: string | null; detail?: Json | null; created_at?: string }
+        Update: { id?: number; kind?: string; twitch_user?: string | null; owner_id?: string | null; match_id?: string | null; detail?: Json | null; created_at?: string }
+        Relationships: []
+      }
       announcements: {
         Row: { id: string; title: string; body: string; audience: string; created_by: string | null; created_at: string }
         Insert: { id?: string; title: string; body: string; audience?: string; created_by?: string | null; created_at?: string }
@@ -233,6 +377,7 @@ export type Database = {
           score: Json | null
           status: string
           stream_url: string | null
+          ticket: Json | null
           updated_at: string
           vod_url: string | null
         }
@@ -246,6 +391,7 @@ export type Database = {
           score?: Json | null
           status: string
           stream_url?: string | null
+          ticket?: Json | null
           updated_at?: string
           vod_url?: string | null
         }
@@ -259,6 +405,7 @@ export type Database = {
           score?: Json | null
           status?: string
           stream_url?: string | null
+          ticket?: Json | null
           updated_at?: string
           vod_url?: string | null
         }
@@ -385,6 +532,8 @@ export type Database = {
           description: string | null
           image: string | null
           source: string | null
+          link: string | null
+          match_id: string | null
           obtained_at: string
         }
         Insert: {
@@ -395,6 +544,8 @@ export type Database = {
           description?: string | null
           image?: string | null
           source?: string | null
+          link?: string | null
+          match_id?: string | null
           obtained_at?: string
         }
         Update: {
@@ -405,6 +556,8 @@ export type Database = {
           description?: string | null
           image?: string | null
           source?: string | null
+          link?: string | null
+          match_id?: string | null
           obtained_at?: string
         }
         Relationships: [
@@ -455,18 +608,24 @@ export type Database = {
           owner_id: string
           discord_handle: string | null
           twitch_handle: string | null
+          twitch_user_id: string | null
+          discord_user_id: string | null
           updated_at: string
         }
         Insert: {
           owner_id: string
           discord_handle?: string | null
           twitch_handle?: string | null
+          twitch_user_id?: string | null
+          discord_user_id?: string | null
           updated_at?: string
         }
         Update: {
           owner_id?: string
           discord_handle?: string | null
           twitch_handle?: string | null
+          twitch_user_id?: string | null
+          discord_user_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -836,6 +995,15 @@ export type Database = {
       is_design: { Args: Record<PropertyKey, never>; Returns: boolean }
       my_player: { Args: Record<PropertyKey, never>; Returns: string }
       is_evaluator: { Args: Record<PropertyKey, never>; Returns: boolean }
+      award_points: { Args: { p_login: string; p_owner: string | null; p_amount: number }; Returns: number }
+      redeem_reward: { Args: { p_login: string; p_reward_id: string }; Returns: Json }
+      place_bet: { Args: { p_login: string; p_owner: string | null; p_prediction_id: string; p_option: number; p_amount: number }; Returns: Json }
+      resolve_prediction: { Args: { p_prediction_id: string; p_winning: number }; Returns: Json }
+      adjust_points: { Args: { p_login: string; p_owner: string | null; p_delta: number; p_allow_negative?: boolean }; Returns: Json }
+      add_watchtime: { Args: { p_login: string; p_minutes: number }; Returns: number }
+      prediction_tally: { Args: { p_prediction_id: string }; Returns: Json }
+      broadcast_notification: { Args: { p_kind: string; p_title: string; p_body: string }; Returns: number }
+      my_points: { Args: Record<PropertyKey, never>; Returns: Json }
       get_candidate_public: {
         Args: { p_token: string }
         Returns: { candidate_id: string; pseudo: string; campaign_title: string; role_sought: string | null; opens_at: string | null; closes_at: string | null; status: string }[]
