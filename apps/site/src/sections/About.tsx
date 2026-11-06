@@ -72,10 +72,8 @@ export function About() {
           </div>
 
           <div className="mt-8 flex flex-wrap gap-4">
-            <KeycapButton to="/equipe" size="lg" sound>
-              &gt; L'effectif
-            </KeycapButton>
-            <KeycapButton to="/tournoi" variant="secondary" size="lg" sound>
+            {/* Bouton « L'effectif » RETIRÉ : la page n'est plus accessible. */}
+            <KeycapButton to="/tournoi" size="lg" sound>
               Nos tournois
             </KeycapButton>
           </div>

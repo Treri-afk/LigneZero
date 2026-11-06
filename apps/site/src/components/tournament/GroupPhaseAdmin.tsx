@@ -36,6 +36,12 @@ export function GroupPhaseAdmin({
   const table = standings(activeTeams(t.teams), t.lobbies);
   const mode = RESEED_MODES.find((m) => m.id === t.reseedMode);
 
+  // Lobbies du dernier round encore sans résultat. Générer la suite avant de
+  // les avoir saisis fausserait la recomposition : en mode « par classement »,
+  // toutes les équipes seraient à égalité et l'ordre serait arbitraire.
+  const pending = t.lobbies.filter((l) => l.round === lastRound && l.status !== 'finished');
+  const blocked = lastRound > 0 && pending.length > 0 && t.reseedMode !== 'keep';
+
   return (
     <div className="mt-5">
       <div className="flex flex-wrap items-center gap-3 border-2 border-line-strong bg-base-900/55 p-4">
@@ -44,22 +50,44 @@ export function GroupPhaseAdmin({
         </span>
         <span className="font-mono text-[10px] text-[color:var(--text-dim)]">{mode?.label}</span>
         <div className="flex-1" />
-        {nextRound <= t.groupRounds && (
+        {nextRound <= t.groupRounds ? (
           <button
             type="button"
             disabled={busy || activeTeams(t.teams).length < 2}
-            onClick={() => onGenerateRound(nextRound)}
+            onClick={() => {
+              if (
+                blocked &&
+                !confirm(
+                  `${pending.length} lobby(s) du round ${lastRound} n'ont pas de résultat.\n\n`
+                    + `La composition du round ${nextRound} dépend du classement : `
+                    + `la générer maintenant donnera des lobbies arbitraires.\n\nContinuer quand même ?`,
+                )
+              ) return;
+              onGenerateRound(nextRound);
+            }}
             className="border-2 border-accent px-4 py-2 font-mono text-xs font-bold uppercase tracking-hud text-accent disabled:opacity-40"
           >
             Générer le round {nextRound}
           </button>
+        ) : (
+          <span className="font-mono text-[10px] uppercase tracking-hud text-[color:var(--text-mute)]">
+            phase de groupes complète
+          </span>
         )}
       </div>
+
+      {blocked && (
+        <p className="mt-3 border-2 border-accent px-3 py-2 font-mono text-[11px] text-accent">
+          ⚠ {pending.length} lobby(s) du round {lastRound} attendent leur résultat — saisis-les
+          avant de générer le round {nextRound}.
+        </p>
+      )}
 
       {/* Classement cumulé */}
       {table.some((r) => r.played > 0) && (
         <div className="mt-6">
           <p className="hud-label mb-3 text-[11px]">[ Classement cumulé ]</p>
+          <TiebreakLegend />
           {table.some((r) => r.tied) && (
             <p className="mb-3 border-2 border-accent px-3 py-2 font-mono text-[11px] text-accent">
               ⚠ Égalité non tranchée automatiquement — les équipes marquées « = » sont
@@ -187,6 +215,66 @@ export function GroupPhaseAdmin({
         <p className="mt-5 border-2 border-dashed border-line-strong px-4 py-8 text-center font-mono text-xs text-[color:var(--text-mute)]">
           &gt; aucun round — génère le round 1
         </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Règles de départage, écrites noir sur blanc.
+ *
+ * Sans ça, l'ordre du classement est illisible : on voit deux équipes à
+ * égalité de points et on ne sait pas pourquoi l'une passe devant l'autre.
+ */
+function TiebreakLegend() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mb-3 border-2 border-line-strong bg-base-900/40">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center gap-2 px-3 py-2 text-left font-mono text-[10px] uppercase tracking-hud text-[color:var(--text-dim)] hover:text-accent"
+      >
+        <span className="text-accent">{open ? '▾' : '▸'}</span>
+        Comment deux équipes à égalité sont départagées
+      </button>
+
+      {open && (
+        <ol className="space-y-2 border-t border-line-strong px-4 py-3 font-mono text-[11px] leading-relaxed text-[color:var(--text-dim)]">
+          <li>
+            <span className="text-accent">1.</span> <b>Points cumulés</b> sur tous les rounds joués.
+          </li>
+          <li>
+            <span className="text-accent">2.</span> <b>Meilleur placement obtenu</b> (colonne « Best »).
+            Avoir gagné un lobby bat la régularité : un 1<sup>er</sup> + un 4<sup>e</sup> passe devant deux 2<sup>es</sup>.
+          </li>
+          <li>
+            <span className="text-accent">3.</span> <b>Nombre de fois à chaque place</b>, comparé place par place.
+            On regarde d'abord qui a le plus de <b>victoires</b> ; à égalité, qui a le plus de
+            2<sup>es</sup> places ; puis de 3<sup>es</sup>, etc.
+            <span className="mt-1 block text-[color:var(--text-mute)]">
+              Ex. à 21 points chacune : A fait 1<sup>er</sup>/1<sup>er</sup>/4<sup>e</sup>, B fait
+              1<sup>er</sup>/2<sup>e</sup>/3<sup>e</sup>. A a deux victoires contre une → A devant.
+            </span>
+          </li>
+          <li>
+            <span className="text-accent">4.</span> <b>Placement au dernier round</b> (colonne « Dern. »),
+            si les deux équipes ont joué le même.
+          </li>
+          <li>
+            <span className="text-accent">5.</span> <b>Confrontation directe</b> : leur lobby commun le
+            plus récent, si elles se sont croisées.
+          </li>
+          <li>
+            <span className="text-accent">6.</span> <b>Ton arbitrage</b> (colonne « Arbitrage »).
+            Valeur plus basse = mieux classée. La raison saisie est affichée publiquement.
+          </li>
+          <li className="border-t border-line-strong pt-2 text-[color:var(--text-mute)]">
+            Si rien ne sépare, l'ordre retombe sur la tête de série — ce n'est pas une règle,
+            c'est un défaut. Les lignes marquées <span className="text-accent">=</span> attendent
+            ton arbitrage.
+          </li>
+        </ol>
       )}
     </div>
   );

@@ -1,41 +1,16 @@
-import { Link } from 'react-router-dom';
 import { BackgroundFX } from '@/components/animation/BackgroundFX';
 import { FunnelStage } from '@/components/animation/FunnelStage';
 import { GlitchText } from '@/components/animation/GlitchText';
 import { TypeWriter } from '@/components/animation/TypeWriter';
-import { MarqueeTicker } from '@/components/animation/MarqueeTicker';
 import { KeycapButton } from '@/components/ui/KeycapButton';
-import { DataReadout } from '@/components/ui/DataReadout';
 import { MediaFrame } from '@/components/ui/MediaFrame';
 import { Bracket } from '@/components/ui/Bracket';
 import { Countdown } from '@/components/ui/Countdown';
 import { usePointerParallax } from '@/hooks/usePointerParallax';
-import { useCounter } from '@/hooks/useCounter';
 import { socials } from '@/data/socials';
 import { useData } from '@/data/DataProvider';
 import { getNextMatch } from '@/lib/format';
 
-/** `{brand}` est remplacé par le nom réel au rendu (voir Hero). */
-const TICKER = [
-  'WELCOME TO {brand}',
-  'NEXT MATCH · VS NEMESIS · 21:00',
-  'ROSTER ONLINE',
-  'NEW DROP — JERSEY 2026',
-  'FOLLOW THE SIGNAL',
-];
-
-function MiniStat({ to, label, suffix = '' }: { to: number; label: string; suffix?: string }) {
-  const { ref, value } = useCounter<HTMLSpanElement>({ to });
-  return (
-    <div>
-      <span ref={ref} className="hud-title text-3xl font-bold text-accent glow-text">
-        {value}
-        {suffix}
-      </span>
-      <p className="hud-label mt-0.5 text-[9px]">{label}</p>
-    </div>
-  );
-}
 
 export function Hero() {
   const stage = usePointerParallax<HTMLDivElement>();
@@ -85,21 +60,14 @@ export function Hero() {
           </h1>
 
           <div className="mt-10 flex flex-wrap items-center gap-4">
-            <KeycapButton to="/equipe" size="lg" sound>
-              &gt; L'équipe
-            </KeycapButton>
-            <KeycapButton to="/tournoi" variant="secondary" size="lg" sound>
-              Tournoi
+            {/* Bouton « L'équipe » RETIRÉ : la page n'est plus accessible. */}
+            <KeycapButton to="/tournoi" size="lg" sound>
+              &gt; Tournoi
             </KeycapButton>
           </div>
 
-          {/* stats inline */}
-          <div className="mt-12 flex flex-wrap gap-10 border-t border-line pt-6">
-            <MiniStat to={12} label="Titres" />
-            <MiniStat to={148} label="Matchs" />
-            <MiniStat to={67} label="Winrate" suffix="%" />
-            <MiniStat to={9} label="Joueurs" />
-          </div>
+          {/* Bloc de chiffres RETIRÉ : titres, matchs, winrate et joueurs
+              étaient codés en dur et ne suivaient aucune donnée. */}
 
           {/* countdown prochain match */}
           {next && (
@@ -124,16 +92,8 @@ export function Hero() {
             // src="/img/hero-jersey.png"  ← décommente quand l'asset est prêt
           />
 
-          {/* télémétrie qui chevauche le visuel (profondeur) */}
-          <DataReadout
-            label="NEXT MATCH"
-            className="absolute -bottom-6 left-0 hidden shadow-ink sm:block lg:-left-10"
-            rows={[
-              { k: 'vs', v: 'NEMESIS' },
-              { k: 'game', v: 'VALORANT' },
-              { k: 'eta', v: '21:00' },
-            ]}
-          />
+          {/* Carte NEXT MATCH RETIRÉE : son contenu était codé en dur
+              (adversaire, « VALORANT », horaire) et ne suivait aucune donnée. */}
 
           {/* badge rouge plein qui dépasse du cadre */}
           <div
@@ -160,17 +120,16 @@ export function Hero() {
         ))}
       </div>
 
-      {/* ticker bas */}
-      <div className="absolute inset-x-0 bottom-0">
-        <MarqueeTicker items={TICKER.map((t) => t.replace('{brand}', brand.name))} variant="dim" />
-      </div>
+      {/* Bandeau défilant RETIRÉ : ses messages étaient figés dans le code. */}
 
       {/* indice de scroll */}
       <div className="absolute bottom-16 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-1 md:flex">
         <span className="font-mono text-[9px] uppercase tracking-hud text-[color:var(--text-mute)]">scroll</span>
-        <Link to="/equipe" aria-label="Explorer" className="text-accent">
+        {/* Pointait vers /equipe, page désormais inaccessible : l'indice de
+            scroll descend simplement vers la suite de la page. */}
+        <a href="#hub" aria-label="Descendre" className="text-accent">
           ▼
-        </Link>
+        </a>
       </div>
     </section>
   );

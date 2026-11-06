@@ -1,4 +1,5 @@
 import type { TournamentFormat, TournamentMatch, TournamentTeam } from '@/types';
+import { uuid as uid } from './uuid';
 
 /**
  * Génération des matchs d'un tournoi à partir des équipes et du format.
@@ -6,12 +7,12 @@ import type { TournamentFormat, TournamentMatch, TournamentTeam } from '@/types'
  * Tout est calculé ICI, côté client, puis écrit en une fois : la génération
  * reste rejouable et lisible, sans procédure stockée à maintenir en base.
  *
- * Les identifiants sont tirés localement (crypto.randomUUID) pour pouvoir
+ * Les identifiants sont tirés localement (voir lib/uuid) pour pouvoir
  * câbler `nextMatchId` / `loserMatchId` AVANT l'écriture — impossible
  * autrement, puisqu'il faudrait connaître les ids générés par Postgres.
  */
 
-const uid = () => crypto.randomUUID();
+
 
 /** Base d'un match vide, à compléter. */
 function blank(tournamentId: string, bracket: TournamentMatch['bracket'], round: number, position: number): TournamentMatch {

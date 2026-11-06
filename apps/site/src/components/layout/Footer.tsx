@@ -1,5 +1,4 @@
 import { socials } from '@/data/socials';
-import { SoundToggle } from '@/components/ui/SoundToggle';
 import { BrandLogo } from '@/components/ui/BrandLogo';
 import { useBrand } from '@/data/DataProvider';
 
@@ -18,9 +17,6 @@ export function Footer() {
         <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
           <div>
             <BrandLogo size="lg" />
-            <p className="mt-2 max-w-xs font-mono text-xs leading-relaxed text-[color:var(--text-dim)]">
-              &gt; {brand.tagline || 'Structure esport française. Streetwear / lifestyle.'}
-            </p>
           </div>
 
           <div>
@@ -45,10 +41,9 @@ export function Footer() {
 
         <div className="mt-12 flex flex-col items-start justify-between gap-4 border-t border-line pt-6 sm:flex-row sm:items-center">
           <p className="font-mono text-[10px] uppercase tracking-hud text-[color:var(--text-dim)]">
-            © {year} {brand.name} — Tous droits réservés
+            © {year} {brand.name}
           </p>
           <div className="flex items-center gap-5">
-            <SoundToggle />
             <button
               type="button"
               onClick={toTop}

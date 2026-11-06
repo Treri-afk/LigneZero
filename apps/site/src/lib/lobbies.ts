@@ -1,4 +1,5 @@
 import type { LobbyEntry, PointRule, ReseedMode, TournamentLobby, TournamentTeam } from '@/types';
+import { uuid as uid } from './uuid';
 
 /**
  * Phase de groupes façon THE FINALS : un lobby oppose N équipes et c'est le
@@ -8,7 +9,7 @@ import type { LobbyEntry, PointRule, ReseedMode, TournamentLobby, TournamentTeam
  * phases d'un tournoi ne partagent ni structure ni règles.
  */
 
-const uid = () => crypto.randomUUID();
+
 
 /** Points d'un placement selon le barème. Hors barème → 0. */
 export function pointsFor(rules: PointRule[], placement: number): number {
